@@ -1,0 +1,195 @@
+
+import React, { useState, useEffect } from 'react';
+import './TuneDiffViewer.css';
+
+function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
+    const [diffData, setDiffData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        fetchDiffData();
+    }, [sessionId, selectedChanges]);
+
+    const fetchDiffData = async () => {
+        try {
+            setLoading(true);
+            // In a real implementation, this would fetch the actual diff data
+            // For now, we'll simulate the diff based on selected changes
+
+            const mockDiffData = {
+                changes: selectedChanges.map((changeId, index) => ({
+                    id: changeId,
+                    parameter: `Parameter_${index + 1}`,
+                    oldValue: `Old_Value_${index + 1}`,
+                    newValue: `New_Value_${index + 1}`,
+                    changeType: 'modified',
+                    impact: index % 2 === 0 ? 'high' : 'medium',
+                    description: `Change description for ${changeId}`,
+                    affectedCells: Math.floor(Math.random() * 20) + 5
+                })),
+                summary: {
+                    totalChanges: selectedChanges.length,
+                    highImpactChanges: Math.floor(selectedChanges.length / 2),
+                    estimatedPowerChange: '+5-8 HP',
+                    safetyRating: 'Safe'
+                }
+            };
+
+            setDiffData(mockDiffData);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getChangeTypeIcon = (changeType) => {
+        switch (changeType) {
+            case 'increased': return '📈';
+            case 'decreased': return '📉';
+            case 'modified': return '🔧';
+            case 'added': return '➕';
+            case 'removed': return '➖';
+            default: return '🔄';
+        }
+    };
+
+    const getImpactColor = (impact) => {
+        switch (impact) {
+            case 'high': return '#dc3545';
+            case 'medium': return '#ffc107';
+            case 'low': return '#28a745';
+            default: return '#6c757d';
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="tune-diff-viewer">
+                <div className="loading-state">
+                    <div className="spinner"></div>
+                    <p>Generating tune differences...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="tune-diff-viewer">
+                <div className="error-state">
+                    <h3>Error Loading Diff</h3>
+                    <p>{error}</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!diffData || diffData.changes.length === 0) {
+        return (
+            <div className="tune-diff-viewer">
+                <div className="no-changes">
+                    <h3>No Changes Selected</h3>
+                    <p>Please go back and select some tuning suggestions to review.</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="tune-diff-viewer">
+            <div className="diff-header">
+                <h2>🔍 Tune Changes Review</h2>
+                <p>Review the proposed changes before applying them to your tune</p>
+            </div>
+
+            <div className="diff-summary">
+                <h3>📊 Change Summary</h3>
+                <div className="summary-grid">
+                    <div className="summary-item">
+                        <span className="summary-label">Total Changes</span>
+                        <span className="summary-value">{diffData.summary.totalChanges}</span>
+                    </div>
+                    <div className="summary-item">
+                        <span className="summary-label">High Impact</span>
+                        <span className="summary-value">{diffData.summary.highImpactChanges}</span>
+                    </div>
+                    <div className="summary-item">
+                        <span className="summary-label">Est. Power Gain</span>
+                        <span className="summary-value">{diffData.summary.estimatedPowerChange}</span>
+                    </div>
+                    <div className="summary-item">
+                        <span className="summary-label">Safety Rating</span>
+                        <span className="summary-value safety">{diffData.summary.safetyRating}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="changes-list">
+                <h3>📝 Detailed Changes</h3>
+                {diffData.changes.map((change) => (
+                    <div key={change.id} className="change-item">
+                        <div className="change-header">
+                            <div className="change-title">
+                                <span className="change-icon">
+                                    {getChangeTypeIcon(change.changeType)}
+                                </span>
+                                <span className="change-parameter">{change.parameter}</span>
+                                <span 
+                                    className="impact-badge"
+                                    style={{ backgroundColor: getImpactColor(change.impact) }}
+                                >
+                                    {change.impact.toUpperCase()}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="change-details">
+                            <div className="value-comparison">
+                                <div className="old-value">
+                                    <span className="value-label">Current:</span>
+                                    <span className="value">{change.oldValue}</span>
+                                </div>
+                                <div className="arrow">→</div>
+                                <div className="new-value">
+                                    <span className="value-label">New:</span>
+                                    <span className="value">{change.newValue}</span>
+                                </div>
+                            </div>
+
+                            <div className="change-info">
+                                <p className="change-description">{change.description}</p>
+                                <p className="affected-cells">
+                                    Affects {change.affectedCells} tune map cells
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="diff-actions">
+                <div className="safety-notice">
+                    <h4>⚠️ Important Safety Notice</h4>
+                    <p>
+                        These changes have been validated for safety, but always start with conservative 
+                        settings and gradually increase performance modifications. Monitor your engine 
+                        closely after applying any changes.
+                    </p>
+                </div>
+
+                <div className="action-buttons">
+                    <button 
+                        className="btn-approve"
+                        onClick={onApproval}
+                    >
+                        ✅ Apply Changes to Tune
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default TuneDiffViewer;

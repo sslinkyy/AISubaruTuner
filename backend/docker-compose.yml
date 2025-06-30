@@ -1,0 +1,26 @@
+
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./exports:/app/exports
+      - ./logs:/app/logs
+    environment:
+      - DATABASE_URL=sqlite:///./ecu_tuning.db
+      - SECRET_KEY=your-secret-key-here
+    restart: unless-stopped
+
+  frontend:
+    build: ../frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    restart: unless-stopped
