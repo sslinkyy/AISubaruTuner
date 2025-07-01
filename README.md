@@ -32,6 +32,8 @@ uvicorn backend.main:app --reload
 ```
 
 This starts the API at <http://localhost:8000>.
+Set the `JWT_SECRET` environment variable to the shared secret used for verifying
+JWT bearer tokens.
 
 ### React app
 
@@ -47,7 +49,6 @@ The development server will open at <http://localhost:3000> and proxy API reques
 
 ### Backend tests
 
-Install the backend dependencies and then run unit tests:
 Install the backend dependencies and run unit tests with:
 
 
