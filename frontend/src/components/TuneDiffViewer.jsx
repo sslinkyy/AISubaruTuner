@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import './TuneDiffViewer.css';
 import CarberryTableDiff from './CarberryTableDiff';
@@ -16,7 +15,6 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
     const fetchDiffData = async () => {
         try {
             setLoading(true);
-
 
             const diffResponse = await fetch(
                 `/api/session/${sessionId}/table_diff/Primary%20Open%20Loop%20Fueling`,
@@ -43,59 +41,10 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
                     safetyRating: data.safety_rating || 'Unknown'
                 };
 
-
-                const processed = detailed.map(ch => ({
-                    id: ch.id,
-                    parameter: ch.table_name || ch.parameter || 'Unknown',
-                    impact: (ch.priority || 'medium').toLowerCase(),
-                    changeType: ch.change_type || 'modified',
-                    description: ch.description || '',
-                    affectedCells: ch.affected_cells || (ch.cell_changes ? ch.cell_changes.length : 0),
-                    oldValue: ch.summary?.old_range || (ch.cell_changes && ch.cell_changes[0] ? ch.cell_changes[0].old_value : 'N/A'),
-                    newValue: ch.summary?.new_range || (ch.cell_changes && ch.cell_changes[0] ? ch.cell_changes[0].new_value : 'N/A')
-                }));
-
-                setDiffData({ changes: processed, summary });
-            } else {
-                setDiffData({ changes: [], summary: {} });
-            }
-
                 setDiffData({ changes: detailed, summary });
             } else {
                 setDiffData({ changes: [], summary: {} });
             }
-
-            const response = await fetch(`/api/session/${sessionId}/table_diff/Primary%20Open%20Loop%20Fueling`, {
-                headers: { 'Authorization': 'Bearer demo_token' }
-            });
-
-            if (response.ok) {
-                const diff = await response.json();
-                setTableDiff(diff);
-            }
-
-            const mockDiffData = {
-                changes: selectedChanges.map((changeId, index) => ({
-                    id: changeId,
-                    parameter: `Parameter_${index + 1}`,
-                    oldValue: `Old_Value_${index + 1}`,
-                    newValue: `New_Value_${index + 1}`,
-                    changeType: 'modified',
-                    impact: index % 2 === 0 ? 'high' : 'medium',
-                    description: `Change description for ${changeId}`,
-                    affectedCells: Math.floor(Math.random() * 20) + 5
-                })),
-                summary: {
-                    totalChanges: selectedChanges.length,
-                    highImpactChanges: Math.floor(selectedChanges.length / 2),
-                    estimatedPowerChange: '+5-8 HP',
-                    safetyRating: 'Safe'
-                }
-            };
-
-            setDiffData(mockDiffData);
-
-
         } catch (err) {
             setError(err.message);
         } finally {
@@ -105,12 +54,13 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
 
     const getChangeTypeIcon = (changeType) => {
         switch (changeType) {
-            case 'increased': return '';
-            case 'decreased': return '';
-            case 'modified': return '';
-            case 'added': return '➕';
-            case 'removed': return '➖';
-            default: return '';
+            case 'increased':
+            case 'decreased':
+            case 'modified':
+            case 'added':
+            case 'removed':
+            default:
+                return '';
         }
     };
 
@@ -195,7 +145,7 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
                                     {getChangeTypeIcon(change.changeType)}
                                 </span>
                                 <span className="change-parameter">{change.parameter}</span>
-                                <span 
+                                <span
                                     className="impact-badge"
                                     style={{ backgroundColor: getImpactColor(change.impact) }}
                                 >
@@ -239,18 +189,18 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
                 <div className="safety-notice">
                     <h4>Important Safety Notice</h4>
                     <p>
-                        These changes have been validated for safety, but always start with conservative 
-                        settings and gradually increase performance modifications. Monitor your engine 
+                        These changes have been validated for safety, but always start with conservative
+                        settings and gradually increase performance modifications. Monitor your engine
                         closely after applying any changes.
                     </p>
                 </div>
 
                 <div className="action-buttons">
-                    <button 
+                    <button
                         className="btn-approve"
                         onClick={onApproval}
                     >
-                         Apply Changes to Tune
+                        Apply Changes to Tune
                     </button>
                 </div>
             </div>
