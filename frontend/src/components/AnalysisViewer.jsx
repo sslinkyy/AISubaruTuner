@@ -107,8 +107,7 @@ function AnalysisViewer({ data }) {
         return (
             <div className={`safety-status ${statusColor}`}>
                 <h4>
-                    {safetyStatus === 'safe' ? 'safe' : 'warning'}
-                    Safety Status: {safetyStatus.toUpperCase()}
+                    {safetyStatus === 'safe' ? 'safe' : 'warning'} Safety Status: {safetyStatus.toUpperCase()}
                 </h4>
 
                 {criticalIssues.length > 0 && (
@@ -116,7 +115,20 @@ function AnalysisViewer({ data }) {
                         <h5>Critical Safety Issues:</h5>
                         {criticalIssues.map((issue, index) => (
                             <div key={index} className="critical-issue">
-                                {issue.message || issue.description || issue}
+                                <div className="issue-header">
+                                    <span className="issue-type">{issue.type || 'Issue'}</span>
+                                    <span className="severity-badge critical">CRITICAL</span>
+                                </div>
+                                <p className="issue-message">{issue.message || issue.description || issue}</p>
+                                {issue.rpm_range && (
+                                    <p className="issue-detail"><strong>RPM:</strong> {issue.rpm_range[0]}-{issue.rpm_range[1]}</p>
+                                )}
+                                {issue.avg_afr && (
+                                    <p className="issue-detail"><strong>Avg AFR:</strong> {issue.avg_afr}</p>
+                                )}
+                                {issue.max_timing && (
+                                    <p className="issue-detail"><strong>Max Timing:</strong> {issue.max_timing}&deg;</p>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -127,7 +139,11 @@ function AnalysisViewer({ data }) {
                         <h5>Safety Warnings:</h5>
                         {warnings.map((warning, index) => (
                             <div key={index} className="safety-warning">
-                                {warning.message || warning.description || warning}
+                                <div className="issue-header">
+                                    <span className="issue-type">{warning.type || 'Warning'}</span>
+                                    <span className="severity-badge warning">WARNING</span>
+                                </div>
+                                <p className="issue-message">{warning.message || warning.description || warning}</p>
                             </div>
                         ))}
                     </div>
@@ -140,22 +156,36 @@ function AnalysisViewer({ data }) {
         if (!data.quality_metrics) return null;
 
         const metrics = data.quality_metrics;
+
+        const formatMetricValue = (value) => {
+            if (value === undefined || value === null) return 'N/A';
+            if (typeof value === 'number') return `${(value * 100).toFixed(1)}%`;
+            if (typeof value === 'object' && value.status) return value.status;
+            return String(value);
+        };
+
         return (
             <div className="analysis-section">
                 <h3>Analysis Quality</h3>
                 <div className="metrics-grid">
                     <div className="metric-item">
                         <span className="metric-label">Analysis Confidence</span>
-                        <span className="metric-value">{(metrics.analysis_confidence * 100).toFixed(1)}%</span>
+                        <span className="metric-value">{formatMetricValue(metrics.analysis_confidence)}</span>
                     </div>
                     <div className="metric-item">
                         <span className="metric-label">ROM Compatibility</span>
-                        <span className="metric-value">{(metrics.rom_compatibility * 100).toFixed(1)}%</span>
+                        <span className="metric-value">{formatMetricValue(metrics.rom_compatibility)}</span>
                     </div>
                     <div className="metric-item">
-                        <span className="metric-label">Data Quality</span>
-                        <span className="metric-value">{(metrics.data_quality * 100).toFixed(1)}%</span>
+                        <span className="metric-label">Data Completeness</span>
+                        <span className="metric-value">{formatMetricValue(metrics.data_quality || metrics.data_completeness)}</span>
                     </div>
+                    {metrics.recommendation_reliability && (
+                        <div className="metric-item">
+                            <span className="metric-label">Recommendation Reliability</span>
+                            <span className="metric-value">{formatMetricValue(metrics.recommendation_reliability)}</span>
+                        </div>
+                    )}
                 </div>
             </div>
         );

@@ -270,53 +270,82 @@ class DatalogAnalyzer:
         return performance
 
     def _analyze_safety(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Analyze safety metrics"""
+        """Analyze safety metrics with automotive-specific thresholds"""
         safety = {
             "overall_status": "safe",
             "critical_issues": [],
             "warnings": []
         }
 
-        # Check for knock
+        # ---- Knock detection ----
         if "Knock Sum" in df.columns:
-            knock_events = len(df[df["Knock Sum"] > 0])
+            knock_mask = df["Knock Sum"] > 0
+            knock_events = int(knock_mask.sum())
             if knock_events > 0:
+                rpm_range = [
+                    int(df.loc[knock_mask, "Engine Speed (rpm)"].min()),
+                    int(df.loc[knock_mask, "Engine Speed (rpm)"].max()),
+                ] if "Engine Speed (rpm)" in df.columns else None
+                max_timing = None
+                if "Ignition Total Timing (degrees)" in df.columns:
+                    max_timing = float(df.loc[knock_mask, "Ignition Total Timing (degrees)"].max())
                 safety["critical_issues"].append({
-                    "type": "Knock Detected",
+                    "type": "knock_detected",
                     "message": f"{knock_events} knock events detected",
-                    "severity": "critical"
+                    "severity": "critical",
+                    "rpm_range": rpm_range,
+                    "max_timing": max_timing,
                 })
                 safety["overall_status"] = "unsafe"
 
-        # Check temperatures
+        # ---- Lean condition detection ----
+        if "A/F Sensor #1 (AFR)" in df.columns:
+            lean_mask = df["A/F Sensor #1 (AFR)"] > 15.0
+            lean_events = int(lean_mask.sum())
+            if lean_events > 0:
+                rpm_range = [
+                    int(df.loc[lean_mask, "Engine Speed (rpm)"].min()),
+                    int(df.loc[lean_mask, "Engine Speed (rpm)"].max()),
+                ] if "Engine Speed (rpm)" in df.columns else None
+                avg_afr = float(df.loc[lean_mask, "A/F Sensor #1 (AFR)"].mean())
+                safety["critical_issues"].append({
+                    "type": "lean_condition",
+                    "message": f"{lean_events} lean AFR readings (>15.0)",
+                    "severity": "critical",
+                    "rpm_range": rpm_range,
+                    "avg_afr": round(avg_afr, 2),
+                })
+                safety["overall_status"] = "unsafe"
+
+        # ---- Coolant temperature ----
         if "Coolant Temperature (F)" in df.columns:
-            max_temp = df["Coolant Temperature (F)"].max()
+            max_temp = float(df["Coolant Temperature (F)"].max())
             if max_temp > 220:
                 safety["warnings"].append({
-                    "type": "High Temperature",
+                    "type": "high_temperature",
                     "message": f"Maximum coolant temperature: {max_temp:.1f}°F",
-                    "severity": "warning"
+                    "severity": "warning",
                 })
 
-        # Check boost levels
+        # ---- Boost pressure ----
         if "Manifold Absolute Pressure (psi)" in df.columns:
             boost_data = df["Manifold Absolute Pressure (psi)"] - 14.7
-            max_boost = boost_data.max()
+            max_boost = float(boost_data.max())
             if max_boost > 20:
                 safety["warnings"].append({
-                    "type": "High Boost",
+                    "type": "high_boost",
                     "message": f"Maximum boost pressure: {max_boost:.1f} psi",
-                    "severity": "warning"
+                    "severity": "warning",
                 })
 
-        # Check duty cycle
+        # ---- Injector duty cycle ----
         if "Injector Duty Cycle (%)" in df.columns:
-            max_duty = df["Injector Duty Cycle (%)"].max()
+            max_duty = float(df["Injector Duty Cycle (%)"].max())
             if max_duty > 85:
                 safety["warnings"].append({
-                    "type": "High Duty Cycle",
+                    "type": "high_duty_cycle",
                     "message": f"Maximum injector duty cycle: {max_duty:.1f}%",
-                    "severity": "warning"
+                    "severity": "warning",
                 })
 
         return safety
