@@ -10,6 +10,13 @@ import logging
 import pandas as pd
 from pathlib import Path
 
+if __package__ in {None, ""}:
+    # Allow running this file directly via `python backend/main.py`
+    import sys
+
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    __package__ = "backend"
+
 # Import your modules
 try:
     from .tune_diff import compute_tune_diff, TuneDiffResult
@@ -121,7 +128,6 @@ def validate_file_type(filename: str, allowed_extensions: List[str]):
         raise HTTPException(
             status_code=400, detail=f"Invalid file type. Allowed: {allowed_extensions}"
         )
-
 
 def detect_platform(
     datalog_path: str, tune_path: str = None, definition_path: str = None
@@ -491,7 +497,6 @@ async def get_table_data(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
 @app.get("/api/session/{session_id}/table_diff/{table_name}")
 async def get_table_diff(
     session_id: str, table_name: str, user: dict = Depends(verify_token)
@@ -525,7 +530,6 @@ async def get_table_diff(
     except Exception as e:
         logger.error(f"Failed to get table diff for {table_name}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 
 @app.get("/api/session/{session_id}/tune_changes")
