@@ -63,6 +63,20 @@ def generate_suggestions(analysis_data: Dict[str, Any]) -> List[Dict[str, Any]]:
             # Determine typical load (psia) and RPM for lean events
             psia = None
             rpm = None
+
+            psia_range = None
+            rpm_range = None
+            if "Manifold Absolute Pressure (psi)" in df.columns:
+                lean_psia = df.loc[afr_values > 15.0, "Manifold Absolute Pressure (psi)"].dropna()
+                psia = lean_psia.mean()
+                if not lean_psia.empty:
+                    psia_range = [float(lean_psia.min()), float(lean_psia.max())]
+            if "Engine Speed (rpm)" in df.columns:
+                lean_rpm = df.loc[afr_values > 15.0, "Engine Speed (rpm)"].dropna()
+                rpm = lean_rpm.mean()
+                if not lean_rpm.empty:
+                    rpm_range = [int(lean_rpm.min()), int(lean_rpm.max())]
+
             if "Manifold Absolute Pressure (psi)" in df.columns:
                 psia = df.loc[afr_values > 15.0, "Manifold Absolute Pressure (psi)"].mean()
             if "Engine Speed (rpm)" in df.columns:
@@ -78,6 +92,12 @@ def generate_suggestions(analysis_data: Dict[str, Any]) -> List[Dict[str, Any]]:
                 "percentage": 8,
                 "psia": round(float(psia), 1) if psia is not None else None,
                 "rpm": int(round(float(rpm))) if rpm is not None else None,
+
+                "tuning_cells": {
+                    "psia_range": [round(psia_range[0], 1), round(psia_range[1], 1)] if psia_range else None,
+                    "rpm_range": rpm_range,
+                },
+
                 "tuning_strategy": "weighted_average_4x4",
                 "affected_areas": "Lean AFR regions",
                 "safety_impact": "Critical - prevents engine damage from lean conditions",
