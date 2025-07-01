@@ -106,9 +106,24 @@ def to_python_types(obj):
         return obj
 
 
+from jose import jwt, JWTError
+
+JWT_ALGORITHM = "HS256"
+JWT_SECRET = os.getenv("JWT_SECRET", "demo_secret")
+
+
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    # TODO: Implement real JWT verification
-    return {"user_id": "demo_user", "role": "user"}
+    """Validate JWT bearer token and return user information."""
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get("sub")
+        role = payload.get("role", "user")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return {"user_id": user_id, "role": role}
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 
 def is_admin(user: dict = Depends(verify_token)):
