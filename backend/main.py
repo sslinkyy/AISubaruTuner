@@ -129,7 +129,6 @@ def validate_file_type(filename: str, allowed_extensions: List[str]):
             status_code=400, detail=f"Invalid file type. Allowed: {allowed_extensions}"
         )
 
-
 def detect_platform(
     datalog_path: str, tune_path: str = None, definition_path: str = None
 ) -> str:
