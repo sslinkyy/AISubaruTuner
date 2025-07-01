@@ -25,15 +25,36 @@ function AnalysisViewer({ data }) {
 
     // Create datalog summary from available data
     const summary = datalogAnalysis.summary || {};
+    const datalogObj = datalogAnalysis.datalog || {};
+    const datalogRecords = Array.isArray(datalogObj.data) ? datalogObj.data : [];
     const datalog_summary = {
-
-        total_rows: summary.total_rows || summary.total_records || datalogAnalysis.total_records || data.total_rows || 0,
-
-        total_rows: summary.total_records || datalogAnalysis.total_records || data.total_rows || 0,
-
-        total_columns: summary.total_columns || datalogAnalysis.parameters_analyzed || data.total_columns || 0,
-        duration: summary.duration || datalogAnalysis.duration_seconds || data.duration || 0,
-        issues_found: datalogAnalysis.issues_found || summary.issues_found || issues.length || 0
+        // Number of rows/records in the datalog
+        total_rows: summary.total_rows ||
+            summary.total_records ||
+            datalogAnalysis.total_rows ||
+            datalogAnalysis.total_records ||
+            datalogObj.total_rows ||
+            datalogRecords.length ||
+            data.total_rows ||
+            0,
+        // Number of parameters/columns logged
+        total_columns: summary.total_columns ||
+            datalogAnalysis.parameters_analyzed ||
+            datalogObj.total_columns ||
+            (Array.isArray(summary.columns) ? summary.columns.length : 0) ||
+            (Array.isArray(datalogObj.columns) ? datalogObj.columns.length : 0) ||
+            data.total_columns ||
+            0,
+        // Duration of the log in seconds
+        duration: summary.duration ||
+            datalogAnalysis.duration_seconds ||
+            data.duration ||
+            0,
+        // How many issues were detected
+        issues_found: datalogAnalysis.issues_found ||
+            summary.issues_found ||
+            issues.length ||
+            0,
     };
 
     const renderIssues = () => {
@@ -93,8 +114,7 @@ function AnalysisViewer({ data }) {
         return (
             <div className={`safety-status ${statusColor}`}>
                 <h4>
-                    {safetyStatus === 'safe' ? 'safe' : 'warning'}
-                    Safety Status: {safetyStatus.toUpperCase()}
+                    {safetyStatus === 'safe' ? 'safe' : 'warning'} Safety Status: {safetyStatus.toUpperCase()}
                 </h4>
 
                 {criticalIssues.length > 0 && (
@@ -102,7 +122,20 @@ function AnalysisViewer({ data }) {
                         <h5>Critical Safety Issues:</h5>
                         {criticalIssues.map((issue, index) => (
                             <div key={index} className="critical-issue">
-                                {issue.message || issue.description || issue}
+                                <div className="issue-header">
+                                    <span className="issue-type">{issue.type || 'Issue'}</span>
+                                    <span className="severity-badge critical">CRITICAL</span>
+                                </div>
+                                <p className="issue-message">{issue.message || issue.description || issue}</p>
+                                {issue.rpm_range && (
+                                    <p className="issue-detail"><strong>RPM:</strong> {issue.rpm_range[0]}-{issue.rpm_range[1]}</p>
+                                )}
+                                {issue.avg_afr && (
+                                    <p className="issue-detail"><strong>Avg AFR:</strong> {issue.avg_afr}</p>
+                                )}
+                                {issue.max_timing && (
+                                    <p className="issue-detail"><strong>Max Timing:</strong> {issue.max_timing}&deg;</p>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -113,7 +146,11 @@ function AnalysisViewer({ data }) {
                         <h5>Safety Warnings:</h5>
                         {warnings.map((warning, index) => (
                             <div key={index} className="safety-warning">
-                                {warning.message || warning.description || warning}
+                                <div className="issue-header">
+                                    <span className="issue-type">{warning.type || 'Warning'}</span>
+                                    <span className="severity-badge warning">WARNING</span>
+                                </div>
+                                <p className="issue-message">{warning.message || warning.description || warning}</p>
                             </div>
                         ))}
                     </div>
@@ -126,22 +163,51 @@ function AnalysisViewer({ data }) {
         if (!data.quality_metrics) return null;
 
         const metrics = data.quality_metrics;
+
+        const formatMetricValue = (value) => {
+            if (value === undefined || value === null) return 'N/A';
+            if (typeof value === 'number') return `${(value * 100).toFixed(1)}%`;
+            if (typeof value === 'object' && value.status) return value.status;
+            return String(value);
+        };
+
+        const getValueClass = (value) => {
+            if (value === undefined || value === null) return '';
+            const val = typeof value === 'object' && value.status ? value.status : value;
+            if (typeof val === 'number') {
+                if (val >= 0.8) return 'high';
+                if (val >= 0.5) return 'medium';
+                return 'low';
+            }
+            const txt = String(val).toLowerCase();
+            if (['high', 'good', 'complete', 'compatible'].includes(txt)) return 'high';
+            if (['medium', 'partial'].includes(txt)) return 'medium';
+            if (['low', 'incomplete', 'incompatible'].includes(txt)) return 'low';
+            return '';
+        };
+
         return (
             <div className="analysis-section">
                 <h3>Analysis Quality</h3>
                 <div className="metrics-grid">
                     <div className="metric-item">
                         <span className="metric-label">Analysis Confidence</span>
-                        <span className="metric-value">{(metrics.analysis_confidence * 100).toFixed(1)}%</span>
+                        <span className={`metric-value ${getValueClass(metrics.analysis_confidence)}`}>{formatMetricValue(metrics.analysis_confidence)}</span>
                     </div>
                     <div className="metric-item">
                         <span className="metric-label">ROM Compatibility</span>
-                        <span className="metric-value">{(metrics.rom_compatibility * 100).toFixed(1)}%</span>
+                        <span className={`metric-value ${getValueClass(metrics.rom_compatibility)}`}>{formatMetricValue(metrics.rom_compatibility)}</span>
                     </div>
                     <div className="metric-item">
-                        <span className="metric-label">Data Quality</span>
-                        <span className="metric-value">{(metrics.data_quality * 100).toFixed(1)}%</span>
+                        <span className="metric-label">Data Completeness</span>
+                        <span className={`metric-value ${getValueClass(metrics.data_quality || metrics.data_completeness)}`}>{formatMetricValue(metrics.data_quality || metrics.data_completeness)}</span>
                     </div>
+                    {metrics.recommendation_reliability && (
+                        <div className="metric-item">
+                            <span className="metric-label">Recommendation Reliability</span>
+                            <span className={`metric-value ${getValueClass(metrics.recommendation_reliability)}`}>{formatMetricValue(metrics.recommendation_reliability)}</span>
+                        </div>
+                    )}
                 </div>
             </div>
         );

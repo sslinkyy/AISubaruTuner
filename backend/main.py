@@ -17,21 +17,35 @@ if __package__ in {None, ""}:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     __package__ = "backend"
 
-# Import your modules
+# Import project modules with fallbacks for direct execution
 try:
-    from .tune_diff import compute_tune_diff, TuneDiffResult
-    from .datalog_parser import parse_datalog, detect_issues
-    from .ai_suggestions import generate_suggestions
-    from .safety_checks import run_safety_checks
-    from .tune_optimizer import optimize_tune
-
+    from backend.tune_diff import compute_tune_diff, TuneDiffResult
+    from backend.datalog_parser import parse_datalog, detect_issues
+    from backend.ai_suggestions import generate_suggestions
+    from backend.safety_checks import run_safety_checks
+    from backend.tune_optimizer import optimize_tune
     legacy_modules_available = True
-except ImportError as e:
-    logging.warning(f"Legacy modules not available: {e}")
-    legacy_modules_available = False
+except ImportError:
+    try:
+        from .tune_diff import compute_tune_diff, TuneDiffResult
+        from .datalog_parser import parse_datalog, detect_issues
+        from .ai_suggestions import generate_suggestions
+        from .safety_checks import run_safety_checks
+        from .tune_optimizer import optimize_tune
+        legacy_modules_available = True
+    except ImportError as e:
+        logging.warning(f"Legacy modules not available: {e}")
+        legacy_modules_available = False
 
-from .rom_integration import create_rom_integration_manager
-from . import enhanced_ai_suggestions
+try:
+    from backend.rom_integration import create_rom_integration_manager
+except ImportError:
+    from .rom_integration import create_rom_integration_manager
+
+try:
+    from backend import enhanced_ai_suggestions
+except Exception:  # pragma: no cover - fallback for direct execution
+    from . import enhanced_ai_suggestions
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -383,7 +397,9 @@ async def analyze_package(
                 ai_suggestions_list = (
                     enhanced_ai_suggestions.generate_enhanced_ai_suggestions(
                         {
-                            "datalog": enhanced_results.get("datalog_analysis", {}),
+                            "datalog": enhanced_results.get("datalog_analysis", {}).get(
+                                "datalog", {}
+                            ),
                             "tune": enhanced_results.get("tune_changes", {}),
                             "platform": platform,
                             "issues": enhanced_results.get("datalog_analysis", {}).get(
