@@ -42,12 +42,12 @@ function App() {
             }
 
             const data = await response.json();
-            console.log('📊 Analysis Response:', data); // Debug log
+            console.log('Analysis Response:', data); // Debug log
 
             setAnalysisData(data);
             setCurrentStep('suggestions');
         } catch (err) {
-            console.error('❌ Analysis Error:', err);
+            console.error('Analysis Error:', err);
             setError(err.message);
         } finally {
             setLoading(false);
@@ -125,14 +125,14 @@ function App() {
         if (error) {
             return (
                 <div className="error-container">
-                    <h2>❌ Error</h2>
+                    <h2>Error</h2>
                     <p>{error}</p>
                     <button className="btn btn-primary" onClick={() => setError(null)}>Try Again</button>
 
                     {/* Debug info in development */}
                     {process.env.NODE_ENV === 'development' && analysisData && (
                         <details style={{ marginTop: '20px', textAlign: 'left' }}>
-                            <summary>🔧 Debug: Last Analysis Data</summary>
+                            <summary>Debug: Last Analysis Data</summary>
                             <pre style={{ fontSize: '12px', overflow: 'auto', maxHeight: '300px' }}>
                                 {JSON.stringify(analysisData, null, 2)}
                             </pre>
@@ -151,7 +151,7 @@ function App() {
 
             case 'suggestions':
                 const suggestions = getSuggestions();
-                console.log('🤖 Suggestions found:', suggestions.length); // Debug log
+                console.log('Suggestions found:', suggestions.length); // Debug log
 
                 return (
                     <div>
@@ -170,7 +170,7 @@ function App() {
                                 border: '1px solid #dee2e6',
                                 borderRadius: '5px'
                             }}>
-                                <h4>🔧 Debug Info</h4>
+                                <h4>Debug Info</h4>
                                 <p><strong>Analysis Type:</strong> {analysisData?.analysis_type || 'unknown'}</p>
                                 <p><strong>Platform:</strong> {analysisData?.platform || 'unknown'}</p>
                                 <p><strong>Suggestions Found:</strong> {suggestions.length}</p>
@@ -225,7 +225,7 @@ function App() {
             <div className="App">
                 <header className="App-header">
                     <div className="container">
-                        <h1>🏎️ ECU Tuning Assistant</h1>
+                        <h1>ECU Tuning Assistant</h1>
                         <div className="progress-indicator">
                             <div className={`step ${currentStep === 'upload' ? 'active' : ''}`}>Upload</div>
                             <div className={`step ${currentStep === 'suggestions' ? 'active' : ''}`}>Analysis</div>
@@ -247,7 +247,7 @@ function App() {
                         <p>© 2025 ECU Tuning Assistant - Professional Grade Tuning Software</p>
                         {process.env.NODE_ENV === 'development' && (
                             <p style={{ fontSize: '12px', opacity: 0.7 }}>
-                                🔧 Development Mode - Debug info enabled
+                                Development Mode - Debug info enabled
                             </p>
                         )}
                     </div>

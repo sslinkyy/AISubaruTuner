@@ -76,7 +76,7 @@ function ExportDownloadPanel({ sessionId, onDownloadComplete }) {
     return (
         <div className="export-download-panel">
             <div className="download-header">
-                <h2>🎉 Tune Optimization Complete!</h2>
+                <h2>Tune Optimization Complete!</h2>
                 <p>Your optimized tune is ready for download</p>
             </div>
 
@@ -85,22 +85,22 @@ function ExportDownloadPanel({ sessionId, onDownloadComplete }) {
                     <>
                         <div className="download-info">
                             <div className="info-card">
-                                <h3>📁 Your Optimized Tune</h3>
+                                <h3>Your Optimized Tune</h3>
                                 <ul>
-                                    <li>✅ Safety validated</li>
-                                    <li>✅ Performance optimized</li>
-                                    <li>✅ Ready for installation</li>
-                                    <li>✅ Backup recommended</li>
+                                    <li>Safety validated</li>
+                                    <li>Performance optimized</li>
+                                    <li>Ready for installation</li>
+                                    <li>Backup recommended</li>
                                 </ul>
                             </div>
 
                             <div className="info-card">
-                                <h3>⚠️ Installation Guidelines</h3>
+                                <h3>Installation Guidelines</h3>
                                 <ul>
-                                    <li>🔧 Use proper flashing tools</li>
-                                    <li>🔋 Ensure stable power supply</li>
-                                    <li>💾 Keep original tune backup</li>
-                                    <li>📊 Monitor initial drives carefully</li>
+                                    <li>Use proper flashing tools</li>
+                                    <li>Ensure stable power supply</li>
+                                    <li>Keep original tune backup</li>
+                                    <li>Monitor initial drives carefully</li>
                                 </ul>
                             </div>
                         </div>
@@ -124,7 +124,7 @@ function ExportDownloadPanel({ sessionId, onDownloadComplete }) {
                                     </>
                                 ) : (
                                     <>
-                                        📥 Download Optimized Tune
+                                        Download Optimized Tune
                                     </>
                                 )}
                             </button>
@@ -134,7 +134,7 @@ function ExportDownloadPanel({ sessionId, onDownloadComplete }) {
                                 onClick={handleGenerateReport}
                                 disabled={downloading}
                             >
-                                📋 Download Tuning Report
+                                Download Tuning Report
                             </button>
                         </div>
                     </>
@@ -157,7 +157,7 @@ function ExportDownloadPanel({ sessionId, onDownloadComplete }) {
             </div>
 
             <div className="safety-reminder">
-                <h4>🛡️ Safety Reminder</h4>
+                <h4>Safety Reminder</h4>
                 <p>
                     Always start with conservative settings and gradually increase performance 
                     modifications. Monitor your engine closely and revert to stock tune if 

@@ -43,9 +43,9 @@ function SuggestionsPanel({ suggestions, onReview }) {
         switch (safePriority) {
             case 'critical': return '🚨';
             case 'high': return '⚠️';
-            case 'medium': return '💡';
+            case 'medium': return '';
             case 'low': return '✨';
-            default: return '📝';
+            default: return '';
         }
     };
 
@@ -58,10 +58,10 @@ function SuggestionsPanel({ suggestions, onReview }) {
         return (
             <div className="suggestions-panel">
                 <div className="suggestions-header">
-                    <h2>🤖 AI Tuning Suggestions</h2>
+                    <h2>AI Tuning Suggestions</h2>
                 </div>
                 <div className="no-suggestions">
-                    <h3>✅ No Suggestions Needed</h3>
+                    <h3>No Suggestions Needed</h3>
                     <p>Your tune appears to be well-optimized based on the datalog analysis. No immediate changes are recommended.</p>
                 </div>
             </div>
@@ -71,7 +71,7 @@ function SuggestionsPanel({ suggestions, onReview }) {
     return (
         <div className="suggestions-panel">
             <div className="suggestions-header">
-                <h2>🤖 AI Tuning Suggestions</h2>
+                <h2>AI Tuning Suggestions</h2>
                 <p>Review and select the tuning changes you'd like to apply</p>
 
                 <div className="suggestions-controls">

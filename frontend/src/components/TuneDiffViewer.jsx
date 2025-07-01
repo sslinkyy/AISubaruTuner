@@ -105,12 +105,12 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
 
     const getChangeTypeIcon = (changeType) => {
         switch (changeType) {
-            case 'increased': return '📈';
-            case 'decreased': return '📉';
-            case 'modified': return '🔧';
+            case 'increased': return '';
+            case 'decreased': return '';
+            case 'modified': return '';
             case 'added': return '➕';
             case 'removed': return '➖';
-            default: return '🔄';
+            default: return '';
         }
     };
 
@@ -159,12 +159,12 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
     return (
         <div className="tune-diff-viewer">
             <div className="diff-header">
-                <h2>🔍 Tune Changes Review</h2>
+                <h2>Tune Changes Review</h2>
                 <p>Review the proposed changes before applying them to your tune</p>
             </div>
 
             <div className="diff-summary">
-                <h3>📊 Change Summary</h3>
+                <h3>Change Summary</h3>
                 <div className="summary-grid">
                     <div className="summary-item">
                         <span className="summary-label">Total Changes</span>
@@ -186,7 +186,7 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
             </div>
 
             <div className="changes-list">
-                <h3>📝 Detailed Changes</h3>
+                <h3>Detailed Changes</h3>
                 {diffData.changes.map((change) => (
                     <div key={change.id} className="change-item">
                         <div className="change-header">
@@ -230,14 +230,14 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
 
             {tableDiff && (
                 <div className="carberry-container">
-                    <h3>📊 Table Preview</h3>
+                    <h3>Table Preview</h3>
                     <CarberryTableDiff diff={tableDiff} />
                 </div>
             )}
 
             <div className="diff-actions">
                 <div className="safety-notice">
-                    <h4>⚠️ Important Safety Notice</h4>
+                    <h4>Important Safety Notice</h4>
                     <p>
                         These changes have been validated for safety, but always start with conservative 
                         settings and gradually increase performance modifications. Monitor your engine 
@@ -250,7 +250,7 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
                         className="btn-approve"
                         onClick={onApproval}
                     >
-                        ✅ Apply Changes to Tune
+                         Apply Changes to Tune
                     </button>
                 </div>
             </div>
