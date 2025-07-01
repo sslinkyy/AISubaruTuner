@@ -17,6 +17,7 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
         try {
             setLoading(true);
 
+
             const diffResponse = await fetch(
                 `/api/session/${sessionId}/table_diff/Primary%20Open%20Loop%20Fueling`,
                 { headers: { 'Authorization': 'Bearer demo_token' } }
@@ -46,6 +47,37 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
             } else {
                 setDiffData({ changes: [], summary: {} });
             }
+
+            const response = await fetch(`/api/session/${sessionId}/table_diff/Primary%20Open%20Loop%20Fueling`, {
+                headers: { 'Authorization': 'Bearer demo_token' }
+            });
+
+            if (response.ok) {
+                const diff = await response.json();
+                setTableDiff(diff);
+            }
+
+            const mockDiffData = {
+                changes: selectedChanges.map((changeId, index) => ({
+                    id: changeId,
+                    parameter: `Parameter_${index + 1}`,
+                    oldValue: `Old_Value_${index + 1}`,
+                    newValue: `New_Value_${index + 1}`,
+                    changeType: 'modified',
+                    impact: index % 2 === 0 ? 'high' : 'medium',
+                    description: `Change description for ${changeId}`,
+                    affectedCells: Math.floor(Math.random() * 20) + 5
+                })),
+                summary: {
+                    totalChanges: selectedChanges.length,
+                    highImpactChanges: Math.floor(selectedChanges.length / 2),
+                    estimatedPowerChange: '+5-8 HP',
+                    safetyRating: 'Safe'
+                }
+            };
+
+            setDiffData(mockDiffData);
+
         } catch (err) {
             setError(err.message);
         } finally {

@@ -1,4 +1,5 @@
 import pandas as pd
+
 import pytest
 
 from .datalog_analyzer import DatalogAnalyzer
@@ -19,6 +20,13 @@ def datalog_csv_path(tmp_path) -> str:
     path = tmp_path / "datalog.csv"
     df.to_csv(path, index=False)
     return str(path)
+
+
+
+
+from .datalog_analyzer import DatalogAnalyzer
+from .enhanced_ai_suggestions import generate_enhanced_ai_suggestions
+
 
 def test_analysis(datalog_csv_path):
     # Initialize analyzer
