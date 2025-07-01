@@ -12,18 +12,18 @@ from pathlib import Path
 
 # Import your modules
 try:
-    from tune_diff import compute_tune_diff, TuneDiffResult
-    from datalog_parser import parse_datalog, detect_issues
-    from ai_suggestions import generate_suggestions
-    from safety_checks import run_safety_checks
-    from tune_optimizer import optimize_tune
+    from .tune_diff import compute_tune_diff, TuneDiffResult
+    from .datalog_parser import parse_datalog, detect_issues
+    from .ai_suggestions import generate_suggestions
+    from .safety_checks import run_safety_checks
+    from .tune_optimizer import optimize_tune
     legacy_modules_available = True
 except ImportError as e:
     logging.warning(f"Legacy modules not available: {e}")
     legacy_modules_available = False
 
-from rom_integration import create_rom_integration_manager
-import enhanced_ai_suggestions
+from .rom_integration import create_rom_integration_manager
+from . import enhanced_ai_suggestions
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

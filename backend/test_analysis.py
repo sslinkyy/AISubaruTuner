@@ -1,6 +1,6 @@
 import pandas as pd
-from datalog_analyzer import DatalogAnalyzer
-from enhanced_ai_suggestions import generate_enhanced_ai_suggestions
+from .datalog_analyzer import DatalogAnalyzer
+from .enhanced_ai_suggestions import generate_enhanced_ai_suggestions
 
 def test_analysis(datalog_csv_path):
     # Initialize analyzer
