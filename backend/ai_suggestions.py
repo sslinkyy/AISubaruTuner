@@ -63,6 +63,7 @@ def generate_suggestions(analysis_data: Dict[str, Any]) -> List[Dict[str, Any]]:
             # Determine typical load (psia) and RPM for lean events
             psia = None
             rpm = None
+
             psia_range = None
             rpm_range = None
             if "Manifold Absolute Pressure (psi)" in df.columns:
@@ -75,6 +76,11 @@ def generate_suggestions(analysis_data: Dict[str, Any]) -> List[Dict[str, Any]]:
                 rpm = lean_rpm.mean()
                 if not lean_rpm.empty:
                     rpm_range = [int(lean_rpm.min()), int(lean_rpm.max())]
+
+            if "Manifold Absolute Pressure (psi)" in df.columns:
+                psia = df.loc[afr_values > 15.0, "Manifold Absolute Pressure (psi)"].mean()
+            if "Engine Speed (rpm)" in df.columns:
+                rpm = df.loc[afr_values > 15.0, "Engine Speed (rpm)"].mean()
 
             suggestions.append({
                 "id": "afr_lean_condition",
