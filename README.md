@@ -25,7 +25,13 @@ npm install
 
 ### FastAPI server
 
-Run the backend API with Uvicorn:
+Before starting the server, install the backend requirements:
+
+```bash
+pip install -r backend/requirements.txt
+```
+
+Then run the API with Uvicorn:
 
 ```bash
 uvicorn backend.main:app --reload

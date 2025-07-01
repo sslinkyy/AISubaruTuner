@@ -92,12 +92,10 @@ def generate_suggestions(analysis_data: Dict[str, Any]) -> List[Dict[str, Any]]:
                 "percentage": 8,
                 "psia": round(float(psia), 1) if psia is not None else None,
                 "rpm": int(round(float(rpm))) if rpm is not None else None,
-
                 "tuning_cells": {
                     "psia_range": [round(psia_range[0], 1), round(psia_range[1], 1)] if psia_range else None,
                     "rpm_range": rpm_range,
                 },
-
                 "tuning_strategy": "weighted_average_4x4",
                 "affected_areas": "Lean AFR regions",
                 "safety_impact": "Critical - prevents engine damage from lean conditions",
