@@ -60,6 +60,14 @@ def generate_suggestions(analysis_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         avg_afr = afr_values.mean()
 
         if lean_count > 0:
+            # Determine typical load (psia) and RPM for lean events
+            psia = None
+            rpm = None
+            if "Manifold Absolute Pressure (psi)" in df.columns:
+                psia = df.loc[afr_values > 15.0, "Manifold Absolute Pressure (psi)"].mean()
+            if "Engine Speed (rpm)" in df.columns:
+                rpm = df.loc[afr_values > 15.0, "Engine Speed (rpm)"].mean()
+
             suggestions.append({
                 "id": "afr_lean_condition",
                 "type": "Fuel Enrichment",
@@ -68,6 +76,9 @@ def generate_suggestions(analysis_data: Dict[str, Any]) -> List[Dict[str, Any]]:
                 "parameter": "fuel_map",
                 "change_type": "increase",
                 "percentage": 8,
+                "psia": round(float(psia), 1) if psia is not None else None,
+                "rpm": int(round(float(rpm))) if rpm is not None else None,
+                "tuning_strategy": "weighted_average_4x4",
                 "affected_areas": "Lean AFR regions",
                 "safety_impact": "Critical - prevents engine damage from lean conditions",
                 "performance_impact": "Safer operation, prevents detonation"
