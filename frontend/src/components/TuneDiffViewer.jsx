@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import './TuneDiffViewer.css';
+import CarberryTableDiff from './CarberryTableDiff';
 
 function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
     const [diffData, setDiffData] = useState(null);
+    const [tableDiff, setTableDiff] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -14,8 +16,15 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
     const fetchDiffData = async () => {
         try {
             setLoading(true);
-            // In a real implementation, this would fetch the actual diff data
-            // For now, we'll simulate the diff based on selected changes
+
+            const response = await fetch(`/api/session/${sessionId}/table_diff/Primary%20Open%20Loop%20Fueling`, {
+                headers: { 'Authorization': 'Bearer demo_token' }
+            });
+
+            if (response.ok) {
+                const diff = await response.json();
+                setTableDiff(diff);
+            }
 
             const mockDiffData = {
                 changes: selectedChanges.map((changeId, index) => ({
@@ -168,6 +177,13 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
                     </div>
                 ))}
             </div>
+
+            {tableDiff && (
+                <div className="carberry-container">
+                    <h3>📊 Table Preview</h3>
+                    <CarberryTableDiff diff={tableDiff} />
+                </div>
+            )}
 
             <div className="diff-actions">
                 <div className="safety-notice">
