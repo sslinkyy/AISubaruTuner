@@ -10,9 +10,9 @@ import json
 import pandas as pd
 
 # Import the new modules
-from xml_definition_parser import XMLDefinitionParser
-from subaru_rom_parser import SubaruROMParser
-from tuning_engine_updated import TuningEngine
+from .xml_definition_parser import XMLDefinitionParser
+from .subaru_rom_parser import SubaruROMParser
+from .tuning_engine_updated import TuningEngine
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +119,7 @@ class ROMIntegrationManager:
         """Analyze datalog file and include raw data for AI suggestions"""
         try:
             # Import your existing datalog analyzer
-            from datalog_analyzer import DatalogAnalyzer
+            from .datalog_analyzer import DatalogAnalyzer
 
             analyzer = DatalogAnalyzer()
             analysis = analyzer.analyze_datalog(datalog_path)
