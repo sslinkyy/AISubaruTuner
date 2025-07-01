@@ -35,6 +35,7 @@ function AnalysisViewer({ data }) {
             datalogAnalysis.total_records ||
             datalogObj.total_rows ||
             datalogRecords.length ||
+
             data.total_rows ||
             0,
         // Number of parameters/columns logged
