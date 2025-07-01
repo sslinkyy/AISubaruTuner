@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import './TuneDiffViewer.css';
+import CarberryTableDiff from './CarberryTableDiff';
 
 function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
     const [diffData, setDiffData] = useState(null);
+    const [tableDiff, setTableDiff] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -14,29 +16,36 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
     const fetchDiffData = async () => {
         try {
             setLoading(true);
-            // In a real implementation, this would fetch the actual diff data
-            // For now, we'll simulate the diff based on selected changes
 
-            const mockDiffData = {
-                changes: selectedChanges.map((changeId, index) => ({
-                    id: changeId,
-                    parameter: `Parameter_${index + 1}`,
-                    oldValue: `Old_Value_${index + 1}`,
-                    newValue: `New_Value_${index + 1}`,
-                    changeType: 'modified',
-                    impact: index % 2 === 0 ? 'high' : 'medium',
-                    description: `Change description for ${changeId}`,
-                    affectedCells: Math.floor(Math.random() * 20) + 5
-                })),
-                summary: {
-                    totalChanges: selectedChanges.length,
-                    highImpactChanges: Math.floor(selectedChanges.length / 2),
-                    estimatedPowerChange: '+5-8 HP',
-                    safetyRating: 'Safe'
-                }
-            };
+            const diffResponse = await fetch(
+                `/api/session/${sessionId}/table_diff/Primary%20Open%20Loop%20Fueling`,
+                { headers: { 'Authorization': 'Bearer demo_token' } }
+            );
 
-            setDiffData(mockDiffData);
+            if (diffResponse.ok) {
+                const diff = await diffResponse.json();
+                setTableDiff(diff);
+            }
+
+            const changesResp = await fetch(
+                `/api/session/${sessionId}/tune_changes?detailed=true`,
+                { headers: { 'Authorization': 'Bearer demo_token' } }
+            );
+
+            if (changesResp.ok) {
+                const data = await changesResp.json();
+                const detailed = data.detailed_changes || data.changes || [];
+                const summary = {
+                    totalChanges: data.total_changes || detailed.length,
+                    highImpactChanges: detailed.filter(c => (c.priority || '').toLowerCase() === 'high' || (c.priority || '').toLowerCase() === 'critical').length,
+                    estimatedPowerChange: data.estimated_power_gain || 'N/A',
+                    safetyRating: data.safety_rating || 'Unknown'
+                };
+
+                setDiffData({ changes: detailed, summary });
+            } else {
+                setDiffData({ changes: [], summary: {} });
+            }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -168,6 +177,13 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
                     </div>
                 ))}
             </div>
+
+            {tableDiff && (
+                <div className="carberry-container">
+                    <h3>📊 Table Preview</h3>
+                    <CarberryTableDiff diff={tableDiff} />
+                </div>
+            )}
 
             <div className="diff-actions">
                 <div className="safety-notice">
