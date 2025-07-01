@@ -24,11 +24,12 @@ function AnalysisViewer({ data }) {
         {};
 
     // Create datalog summary from available data
+    const summary = datalogAnalysis.summary || {};
     const datalog_summary = {
-        total_rows: datalogAnalysis.total_records || data.total_rows || 0,
-        total_columns: datalogAnalysis.parameters_analyzed || data.total_columns || 0,
-        duration: datalogAnalysis.duration_seconds || data.duration || 0,
-        issues_found: datalogAnalysis.issues_found || issues.length || 0
+        total_rows: summary.total_rows || summary.total_records || datalogAnalysis.total_records || data.total_rows || 0,
+        total_columns: summary.total_columns || datalogAnalysis.parameters_analyzed || data.total_columns || 0,
+        duration: summary.duration || datalogAnalysis.duration_seconds || data.duration || 0,
+        issues_found: datalogAnalysis.issues_found || summary.issues_found || issues.length || 0
     };
 
     const renderIssues = () => {
