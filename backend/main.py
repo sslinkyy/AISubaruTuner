@@ -315,7 +315,7 @@ async def analyze_package(
                     "datalog", {}
                 )["data"] = datalog_records
                 enhanced_results["datalog_analysis"].setdefault("summary", {}).update(da_summary)
-=======
+
                 enhanced_results.setdefault("datalog_analysis", {}).setdefault(
                     "datalog", {}
                 )["data"] = datalog_records
