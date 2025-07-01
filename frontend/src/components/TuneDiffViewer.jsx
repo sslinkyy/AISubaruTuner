@@ -17,6 +17,37 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
         try {
             setLoading(true);
 
+
+            const diffResponse = await fetch(
+                `/api/session/${sessionId}/table_diff/Primary%20Open%20Loop%20Fueling`,
+                { headers: { 'Authorization': 'Bearer demo_token' } }
+            );
+
+            if (diffResponse.ok) {
+                const diff = await diffResponse.json();
+                setTableDiff(diff);
+            }
+
+            const changesResp = await fetch(
+                `/api/session/${sessionId}/tune_changes?detailed=true`,
+                { headers: { 'Authorization': 'Bearer demo_token' } }
+            );
+
+            if (changesResp.ok) {
+                const data = await changesResp.json();
+                const detailed = data.detailed_changes || data.changes || [];
+                const summary = {
+                    totalChanges: data.total_changes || detailed.length,
+                    highImpactChanges: detailed.filter(c => (c.priority || '').toLowerCase() === 'high' || (c.priority || '').toLowerCase() === 'critical').length,
+                    estimatedPowerChange: data.estimated_power_gain || 'N/A',
+                    safetyRating: data.safety_rating || 'Unknown'
+                };
+
+                setDiffData({ changes: detailed, summary });
+            } else {
+                setDiffData({ changes: [], summary: {} });
+            }
+
             const response = await fetch(`/api/session/${sessionId}/table_diff/Primary%20Open%20Loop%20Fueling`, {
                 headers: { 'Authorization': 'Bearer demo_token' }
             });
@@ -46,6 +77,7 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
             };
 
             setDiffData(mockDiffData);
+
         } catch (err) {
             setError(err.message);
         } finally {
