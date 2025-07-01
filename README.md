@@ -47,9 +47,10 @@ The development server will open at <http://localhost:3000> and proxy API reques
 
 ### Backend tests
 
-Run unit tests with:
+Install the backend dependencies and run unit tests with:
 
 ```bash
+pip install -r backend/requirements.txt
 pytest
 ```
 
