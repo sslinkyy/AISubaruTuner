@@ -491,6 +491,43 @@ async def get_table_data(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+@app.get("/api/session/{session_id}/table_diff/{table_name}")
+async def get_table_diff(
+    session_id: str, table_name: str, user: dict = Depends(verify_token)
+):
+    """Return before/after values for a ROM table in Carberry format"""
+    session = active_sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if "analysis" not in session:
+        raise HTTPException(status_code=400, detail="Analysis not completed")
+
+    try:
+        datalog_path = session["datalog"]["file_path"]
+        tune_path = session["tune"]["file_path"]
+        definition_path = session.get("definition", {}).get("file_path")
+
+        results = rom_manager.analyze_rom_package(
+            datalog_path, tune_path, definition_path
+        )
+        tune_changes = results["detailed_data"]["tune_change_details"]
+
+        table_data = rom_manager.get_table_data(session, table_name)
+        if not table_data:
+            raise HTTPException(
+                status_code=404, detail=f"Table '{table_name}' not found"
+            )
+
+        diff = rom_manager.generate_carberry_diff(table_data, tune_changes)
+        return to_python_types(diff)
+    except Exception as e:
+        logger.error(f"Failed to get table diff for {table_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 @app.get("/api/session/{session_id}/tune_changes")
 async def get_tune_changes(
     session_id: str, detailed: bool = False, user: dict = Depends(verify_token)
