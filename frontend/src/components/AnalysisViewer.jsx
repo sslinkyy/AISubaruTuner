@@ -48,7 +48,7 @@ function AnalysisViewer({ data }) {
 
         return (
             <div className="issues-list">
-                <h4>⚠️ Issues Detected ({issues.length})</h4>
+                <h4>Issues Detected ({issues.length})</h4>
                 {issues.map((issue, index) => (
                     <div key={index} className={`issue-item ${issue.severity || 'medium'}`}>
                         <div className="issue-header">
@@ -93,7 +93,7 @@ function AnalysisViewer({ data }) {
         return (
             <div className={`safety-status ${statusColor}`}>
                 <h4>
-                    {safetyStatus === 'safe' ? '🛡️' : '⚠️'}
+                    {safetyStatus === 'safe' ? 'safe' : 'warning'}
                     Safety Status: {safetyStatus.toUpperCase()}
                 </h4>
 
@@ -128,7 +128,7 @@ function AnalysisViewer({ data }) {
         const metrics = data.quality_metrics;
         return (
             <div className="analysis-section">
-                <h3>📊 Analysis Quality</h3>
+                <h3>Analysis Quality</h3>
                 <div className="metrics-grid">
                     <div className="metric-item">
                         <span className="metric-label">Analysis Confidence</span>
@@ -150,7 +150,7 @@ function AnalysisViewer({ data }) {
     return (
         <div className="analysis-viewer">
             <div className="analysis-header">
-                <h2>📊 Datalog Analysis Results</h2>
+                <h2>Datalog Analysis Results</h2>
                 <div className="platform-info">
                     <span className="platform-badge">{platform}</span>
                     <span className="data-info">
@@ -164,19 +164,19 @@ function AnalysisViewer({ data }) {
 
             <div className="analysis-grid">
                 <div className="analysis-section">
-                    <h3>🔍 Issue Detection</h3>
+                    <h3>Issue Detection</h3>
                     {renderIssues()}
                 </div>
 
                 <div className="analysis-section">
-                    <h3>🛡️ Safety Analysis</h3>
+                    <h3>Safety Analysis</h3>
                     {renderSafetyStatus()}
                 </div>
 
                 {renderEnhancedMetrics()}
 
                 <div className="analysis-section full-width">
-                    <h3>📈 Data Summary</h3>
+                    <h3>Data Summary</h3>
                     <div className="summary-stats">
                         <div className="stat-item">
                             <span className="stat-label">Duration</span>
@@ -207,15 +207,12 @@ function AnalysisViewer({ data }) {
                 </div>
             </div>
 
-            {/* Debug info for development */}
-            {process.env.NODE_ENV === 'development' && (
-                <div className="debug-section">
-                    <details>
-                        <summary>🔧 Debug: Raw Analysis Data</summary>
-                        <pre>{JSON.stringify(data, null, 2)}</pre>
-                    </details>
-                </div>
-            )}
+            <div className="debug-section">
+                <details>
+                    <summary>Analysis Data</summary>
+                    <pre>{JSON.stringify(data, null, 2)}</pre>
+                </details>
+            </div>
         </div>
     );
 }
