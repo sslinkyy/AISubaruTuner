@@ -43,6 +43,23 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
                     safetyRating: data.safety_rating || 'Unknown'
                 };
 
+
+                const processed = detailed.map(ch => ({
+                    id: ch.id,
+                    parameter: ch.table_name || ch.parameter || 'Unknown',
+                    impact: (ch.priority || 'medium').toLowerCase(),
+                    changeType: ch.change_type || 'modified',
+                    description: ch.description || '',
+                    affectedCells: ch.affected_cells || (ch.cell_changes ? ch.cell_changes.length : 0),
+                    oldValue: ch.summary?.old_range || (ch.cell_changes && ch.cell_changes[0] ? ch.cell_changes[0].old_value : 'N/A'),
+                    newValue: ch.summary?.new_range || (ch.cell_changes && ch.cell_changes[0] ? ch.cell_changes[0].new_value : 'N/A')
+                }));
+
+                setDiffData({ changes: processed, summary });
+            } else {
+                setDiffData({ changes: [], summary: {} });
+            }
+
                 setDiffData({ changes: detailed, summary });
             } else {
                 setDiffData({ changes: [], summary: {} });
@@ -77,6 +94,7 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
             };
 
             setDiffData(mockDiffData);
+
 
         } catch (err) {
             setError(err.message);
