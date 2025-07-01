@@ -28,7 +28,7 @@ function AnalysisViewer({ data }) {
     const datalog_summary = {
 
         total_rows: summary.total_rows || summary.total_records || datalogAnalysis.total_records || data.total_rows || 0,
-=======
+
         total_rows: summary.total_records || datalogAnalysis.total_records || data.total_rows || 0,
 
         total_columns: summary.total_columns || datalogAnalysis.parameters_analyzed || data.total_columns || 0,
