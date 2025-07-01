@@ -302,6 +302,7 @@ async def analyze_package(
                 )
                 datalog_df = parse_datalog(datalog_path, platform)
                 datalog_records = datalog_df.to_dict(orient="records")
+
                 da_summary = {
                     "total_rows": len(datalog_df),
                     "total_columns": len(datalog_df.columns),
@@ -314,6 +315,11 @@ async def analyze_package(
                     "datalog", {}
                 )["data"] = datalog_records
                 enhanced_results["datalog_analysis"].setdefault("summary", {}).update(da_summary)
+=======
+                enhanced_results.setdefault("datalog_analysis", {}).setdefault(
+                    "datalog", {}
+                )["data"] = datalog_records
+
                 logger.info(
                     f"Injected {len(datalog_records)} datalog records into analysis results"
                 )
