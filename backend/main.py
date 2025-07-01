@@ -491,6 +491,7 @@ async def get_table_data(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
 @app.get("/api/session/{session_id}/table_diff/{table_name}")
 async def get_table_diff(
     session_id: str, table_name: str, user: dict = Depends(verify_token)
@@ -524,6 +525,7 @@ async def get_table_diff(
     except Exception as e:
         logger.error(f"Failed to get table diff for {table_name}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.get("/api/session/{session_id}/tune_changes")
