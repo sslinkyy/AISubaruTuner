@@ -60,6 +60,8 @@ class EnhancedTuningAI:
         analysis_data: Dict[str, Any],
         interval_size: int = 1000,
         load_interval_size: int = 5,
+        self, analysis_data: Dict[str, Any], interval_size: int = 1000
+
     ) -> List[Dict[str, Any]]:
         """Generate comprehensive tuning suggestions with specific RPM/load context
         and aggregate them by RPM interval.
@@ -137,6 +139,7 @@ class EnhancedTuningAI:
         grouped = self._group_suggestions_by_intervals(
             suggestions, interval_size, load_interval_size, df
         )
+        grouped = self._group_suggestions_by_interval(suggestions, interval_size)
 
         return grouped[:20]
 
@@ -1079,6 +1082,7 @@ class EnhancedTuningAI:
                 "avg_load": seg[load_col].mean() if load_col and load_col in seg.columns else None,
                 "load_min": seg[load_col].min() if load_col and load_col in seg.columns else None,
                 "load_max": seg[load_col].max() if load_col and load_col in seg.columns else None,
+                "avg_map": seg["Manifold Absolute Pressure (psi)"].mean() if "Manifold Absolute Pressure (psi)" in seg.columns else None,
                 "avg_timing": seg["Ignition Total Timing (degrees)"].mean() if "Ignition Total Timing (degrees)" in seg.columns else None,
                 "data_points": len(seg),
             }
@@ -1094,6 +1098,9 @@ class EnhancedTuningAI:
                         results.append({
                             "rpm_range": f"{start}-{end}",
                             "load_range": load_desc,
+                        results.append({
+                            "rpm_range": f"{start}-{end}",
+                            "load_range": f"{(metrics['avg_map'] or 0)-14.7:+.1f} psi avg" if metrics["avg_map"] else "N/A",
                             "suggestion": "Increase fuel",
                             "reason": "AFR trending lean compared to previous interval",
                             "confidence": round(min(1.0, metrics["data_points"] / 20), 2),
@@ -1109,6 +1116,9 @@ class EnhancedTuningAI:
                     results.append({
                         "rpm_range": f"{start}-{end}",
                         "load_range": load_desc,
+                    results.append({
+                        "rpm_range": f"{start}-{end}",
+                        "load_range": f"{(metrics['avg_map'] or 0)-14.7:+.1f} psi avg" if metrics["avg_map"] else "N/A",
                         "suggestion": "Reduce ignition timing",
                         "reason": f"Knock count increased to {metrics['knock_events']} in this interval",
                         "confidence": round(min(1.0, metrics["data_points"] / 20), 2),
@@ -1127,6 +1137,13 @@ class EnhancedTuningAI:
                             "load_range": load_desc,
                             "suggestion": "Reduce boost or wastegate duty",
                             "reason": "Load rising quickly compared to previous interval",
+                if metrics["avg_map"] and prev_metrics.get("avg_map"):
+                    if metrics["avg_map"] - prev_metrics["avg_map"] > 3:
+                        results.append({
+                            "rpm_range": f"{start}-{end}",
+                            "load_range": f"{(metrics['avg_map'] or 0)-14.7:+.1f} psi avg",
+                            "suggestion": "Reduce boost or wastegate duty",
+                            "reason": "MAP rising quickly compared to previous interval",
                             "confidence": round(min(1.0, metrics["data_points"] / 20), 2),
                             "data_points": metrics["data_points"],
                         })
@@ -1215,6 +1232,38 @@ class EnhancedTuningAI:
             return "Mass Airflow (g/s)", "g/s"
         return None, ""
 
+    def _group_suggestions_by_interval(self, suggestions: List[Dict[str, Any]], interval_size: int) -> List[Dict[str, Any]]:
+        """Break suggestions into uniform RPM intervals for clear presentation."""
+        grouped: List[Dict[str, Any]] = []
+
+        for s in suggestions:
+            rpm_range = s.get("rpm_range")
+            if not rpm_range:
+                grouped.append(s)
+                continue
+            try:
+                start_str, end_str = rpm_range.split("-")
+                start = int(float(start_str))
+                end = int(float(end_str))
+            except ValueError:
+                grouped.append(s)
+                continue
+
+            cur = (start // interval_size) * interval_size
+            while cur < end:
+                next_end = cur + interval_size
+                if next_end <= start:
+                    cur = next_end
+                    continue
+                sub_start = max(cur, start)
+                sub_end = min(next_end, end)
+                entry = s.copy()
+                entry["rpm_range"] = f"{sub_start}-{sub_end}"
+                grouped.append(entry)
+                cur = next_end
+
+        return grouped
+
     def _generate_no_data_suggestions(self) -> List[Dict[str, Any]]:
         """Generate suggestions when no datalog data is available"""
         return [{
@@ -1254,3 +1303,10 @@ def generate_enhanced_ai_suggestions(
     return ai.generate_comprehensive_suggestions(
         analysis_data, interval_size, load_interval_size
     )
+    analysis_data: Dict[str, Any], interval_size: int = 1000
+) -> List[Dict[str, Any]]:
+    """Convenience wrapper for :class:`EnhancedTuningAI`.
+
+    ``interval_size`` controls the RPM grouping size (500 or 1000 RPM)."""
+    ai = EnhancedTuningAI()
+    return ai.generate_comprehensive_suggestions(analysis_data, interval_size)
