@@ -79,7 +79,9 @@ function renderTable(table, compare = null) {
 
 export default function TuneTableComparison({ tables = [], onContinue }) {
   if (!tables.length) return (
-    <div className="table-comparison empty">No tables to compare.</div>
+    <div className="table-comparison empty" role="alert">
+      No tables to compare. Selected suggestions may not modify any ROM tables.
+    </div>
   );
 
   const priorityColor = (p) => {
