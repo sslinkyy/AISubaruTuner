@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Body, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Dict, List
+from typing import Dict, List, Optional
 from datetime import datetime, timezone
 import os
 import json
