@@ -3,6 +3,7 @@ import './TuneDiffViewer.css';
 import CarberryTableDiff from './CarberryTableDiff';
 import AnalysisReport from './AnalysisReport';
 import TuneInfoPanel from './TuneInfoPanel';
+import LoadingSpinner from './LoadingSpinner';
 
 function TuneDiffViewer({ sessionId, analysisData, selectedChanges, onApproval }) {
     const [diffData, setDiffData] = useState(null);
@@ -86,10 +87,7 @@ function TuneDiffViewer({ sessionId, analysisData, selectedChanges, onApproval }
     if (loading) {
         return (
             <div className="tune-diff-viewer">
-                <div className="loading-state">
-                    <div className="spinner"></div>
-                    <p>Generating tune differences...</p>
-                </div>
+                <LoadingSpinner message="Generating tune differences..." />
             </div>
         );
     }
@@ -97,7 +95,7 @@ function TuneDiffViewer({ sessionId, analysisData, selectedChanges, onApproval }
     if (error) {
         return (
             <div className="tune-diff-viewer">
-                <div className="error-state">
+                <div className="error-state" role="alert">
                     <h3>Error Loading Diff</h3>
                     <p>{error}</p>
                 </div>
@@ -108,7 +106,7 @@ function TuneDiffViewer({ sessionId, analysisData, selectedChanges, onApproval }
     if (!diffData || diffData.changes.length === 0) {
         return (
             <div className="tune-diff-viewer">
-                <div className="no-changes">
+                <div className="no-changes" role="alert">
                     <h3>No Changes Selected</h3>
                     <p>Please go back and select some tuning suggestions to review.</p>
                 </div>
@@ -190,6 +188,16 @@ function TuneDiffViewer({ sessionId, analysisData, selectedChanges, onApproval }
                                 {change.summary && (
                                     <p className="change-stats">
                                         Avg {change.summary.avg_change}, Max {change.summary.max_change}
+                                    </p>
+                                )}
+                                {change.predicted_effect && (
+                                    <p className="change-stats">
+                                        {change.predicted_effect.performance && (
+                                            <span>Perf: {change.predicted_effect.performance}; </span>
+                                        )}
+                                        {change.predicted_effect.safety && (
+                                            <span>Safety: {change.predicted_effect.safety}</span>
+                                        )}
                                     </p>
                                 )}
                             </div>

@@ -36,14 +36,46 @@ class TuningEngine:
             "afr": ["A/F Learning", "Air Fuel Ratio", "Lambda Target"]
         }
 
-    def generate_tune_changes(self, rom_data: Dict, datalog_analysis: Dict, suggestions: List[Dict]) -> Dict[str, Any]:
+    def _validate_inputs(
+        self,
+        rom_data: Dict,
+        datalog_analysis: Dict,
+        suggestions: List[Dict],
+    ) -> Tuple[bool, str]:
+        """Validate inputs before generating tune changes."""
+
+        if not isinstance(rom_data, dict) or not rom_data.get("tables"):
+            return False, "ROM data missing or invalid"
+
+        if not isinstance(datalog_analysis, dict) or "summary" not in datalog_analysis:
+            return False, "Datalog analysis missing or invalid"
+
+        if not isinstance(suggestions, list):
+            return False, "Suggestions must be a list"
+
+        return True, ""
+
+    def generate_tune_changes(
+        self, rom_data: Dict, datalog_analysis: Dict, suggestions: List[Dict]
+    ) -> Dict[str, Any]:
         """Generate specific tune changes based on ROM analysis and datalog data"""
 
-        if not rom_data or not rom_data.get("tables"):
-            logger.warning("No ROM data available for tune changes")
-            return self._generate_placeholder_changes(suggestions)
+        valid, message = self._validate_inputs(rom_data, datalog_analysis, suggestions)
+        if not valid:
+            logger.warning(f"Input validation failed: {message}")
+            placeholder = self._generate_placeholder_changes(suggestions)
+            placeholder["validation"] = {"status": "invalid", "message": message}
+            return placeholder
 
-        logger.info(f"Generating tune changes from {len(rom_data['tables'])} ROM tables and {len(suggestions)} suggestions")
+        logger.info(
+            f"Generating tune changes from {len(rom_data['tables'])} ROM tables and {len(suggestions)} suggestions"
+        )
+        logger.debug(
+            "Input summary: tables=%s suggestions=%s issues=%s",
+            len(rom_data.get("tables", {})),
+            len(suggestions),
+            len(datalog_analysis.get("issues", [])),
+        )
 
         changes = []
         safety_warnings = []
@@ -207,6 +239,10 @@ class TuningEngine:
                     "storage_type": definition.get("storagetype", "unknown"),
                     "table_size": f"{definition.get('sizex', 0)}x{definition.get('sizey', 0)}",
                     "endianness": definition.get("endian", "unknown")
+                },
+                "predicted_effect": {
+                    "performance": suggestion.get("performance_impact"),
+                    "safety": suggestion.get("safety_impact")
                 }
             }
 
@@ -552,7 +588,11 @@ class TuningEngine:
                 "max_change_percent": suggestion.get("percentage", 5)
             },
             "note": "Generic change - upload ROM file with XML definition for detailed analysis",
-            "rom_metadata": {"status": "not_available"}
+            "rom_metadata": {"status": "not_available"},
+            "predicted_effect": {
+                "performance": suggestion.get("performance_impact"),
+                "safety": suggestion.get("safety_impact")
+            }
         }
 
     def _generate_placeholder_changes(self, suggestions: List[Dict]) -> Dict[str, Any]:

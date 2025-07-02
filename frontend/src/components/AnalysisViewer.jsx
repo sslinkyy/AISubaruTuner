@@ -1,8 +1,9 @@
 import React from 'react';
+import LoadingSpinner from './LoadingSpinner';
 import './AnalysisViewer.css';
 
 function AnalysisViewer({ data }) {
-    if (!data) return null;
+    if (!data) return <LoadingSpinner message="Loading analysis..." />;
 
     // Handle both enhanced and legacy response formats
     const platform = data.platform || 'Unknown';
@@ -159,6 +160,35 @@ function AnalysisViewer({ data }) {
         );
     };
 
+    const renderKeyMetrics = () => {
+        const perf = datalogAnalysis.performance_metrics || datalogAnalysis.performance || {};
+        const temp = summary.temperature_range || {};
+
+        const metrics = [];
+        if (perf.estimated_peak_hp !== undefined) metrics.push({ label: 'Est. Peak HP', value: perf.estimated_peak_hp });
+        if (perf.max_boost !== undefined) metrics.push({ label: 'Max Boost', value: `${perf.max_boost} psi` });
+        if (perf.avg_boost !== undefined) metrics.push({ label: 'Avg Boost', value: `${perf.avg_boost} psi` });
+        if (perf.max_timing !== undefined) metrics.push({ label: 'Max Timing', value: `${perf.max_timing}°` });
+        if (perf.max_duty_cycle !== undefined) metrics.push({ label: 'Max IDC', value: `${perf.max_duty_cycle}%` });
+        if (temp.max !== undefined) metrics.push({ label: 'Max Coolant', value: `${temp.max}°F` });
+
+        if (metrics.length === 0) return null;
+
+        return (
+            <div className="analysis-section">
+                <h3>Key Metrics</h3>
+                <div className="metrics-grid">
+                    {metrics.map((m, idx) => (
+                        <div className="metric-item" key={idx}>
+                            <span className="metric-label">{m.label}</span>
+                            <span className="metric-value">{m.value}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
     const renderEnhancedMetrics = () => {
         if (!data.quality_metrics) return null;
 
@@ -253,6 +283,7 @@ function AnalysisViewer({ data }) {
                 </div>
 
                 {renderEnhancedMetrics()}
+                {renderKeyMetrics()}
 
                 <div className="analysis-section full-width">
                     <h3>Data Summary</h3>
