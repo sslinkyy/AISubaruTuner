@@ -981,6 +981,7 @@ class EnhancedTuningAI:
                 if abs(cold_avg - hot_avg) > 5:
                     action = "increase" if cold_avg > hot_avg else "decrease"
                     confidence = round(min(1.0, abs(cold_avg - hot_avg) / 10), 2)
+
                     suggestions.append({
                         "id": "iat_compensation",
                         "type": "Temperature Compensation",
