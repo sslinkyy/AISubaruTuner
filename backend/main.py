@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Body, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict, List, Optional
 from datetime import datetime, timezone
@@ -286,8 +287,17 @@ async def analyze_package(
     try:
         session = active_sessions.get(session_id)
         if not session:
-            logger.warning(f"Session {session_id} not found for user {user['user_id']}")
-            raise HTTPException(status_code=404, detail="Session not found")
+            logger.warning(
+                f"Session {session_id} not found for user {user['user_id']}"
+            )
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "status": "error",
+                    "message": "Session not found",
+                    "debug": {"session_id": session_id},
+                },
+            )
 
         datalog_path = session["datalog"]["file_path"]
         tune_path = session["tune"]["file_path"]
@@ -522,11 +532,24 @@ async def analyze_package(
         return to_python_types(response_data)
 
     except HTTPException as he:
-        raise he
+        logger.error(f"Analysis failed with HTTP error: {he.detail}")
+        return JSONResponse(
+            status_code=he.status_code,
+            content={
+                "status": "error",
+                "message": he.detail,
+                "debug": {"detail": str(he)},
+            },
+        )
     except Exception as e:
-        logger.error(f"Analysis failed: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail="Internal server error during analysis"
+        logger.exception("Unexpected analysis failure")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": "Internal server error during analysis",
+                "debug": {"exception": str(e)},
+            },
         )
 
 
