@@ -19,7 +19,11 @@ function SuggestionsPanel({ suggestions, onReview }) {
         if (selectedSuggestions.length === suggestions.length) {
             setSelectedSuggestions([]);
         } else {
-            setSelectedSuggestions(suggestions.map((s, index) => s.id || index));
+            setSelectedSuggestions(
+                suggestions.map((s, index) =>
+                    s.id || s.table || s.table_name || index
+                )
+            );
         }
     };
 
@@ -89,8 +93,10 @@ function SuggestionsPanel({ suggestions, onReview }) {
 
             <div className="suggestions-list">
                 {suggestions.map((suggestion, index) => {
-                    // Use index as fallback ID if suggestion.id is missing
-                    const suggestionId = suggestion.id || index;
+                    // Use explicit ID if provided, otherwise fall back to table name
+                    // and finally the array index for consistent references
+                    const suggestionId =
+                        suggestion.id || suggestion.table || suggestion.table_name || index;
 
                     return (
                         <div 
