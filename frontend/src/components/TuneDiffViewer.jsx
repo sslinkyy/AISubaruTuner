@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './TuneDiffViewer.css';
 import CarberryTableDiff from './CarberryTableDiff';
 import AnalysisReport from './AnalysisReport';
+import TuneInfoPanel from './TuneInfoPanel';
 
-function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
+function TuneDiffViewer({ sessionId, analysisData, selectedChanges, onApproval }) {
     const [diffData, setDiffData] = useState(null);
     const [tableDiff, setTableDiff] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -44,7 +45,8 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
                     changes: detailed,
                     summary,
                     analysisMetadata: data.analysis_metadata,
-                    romCompatibility: data.rom_compatibility
+                    romCompatibility: data.rom_compatibility,
+                    fileInfo: data.file_info
                 });
             } else {
                 setDiffData({ changes: [], summary: {} });
@@ -116,6 +118,11 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
 
     return (
         <div className="tune-diff-viewer">
+            <TuneInfoPanel
+                romAnalysis={analysisData?.rom_analysis || diffData.analysisMetadata?.rom_analysis}
+                metadata={diffData.analysisMetadata}
+                tuneFile={analysisData?.file_info?.tune || diffData.fileInfo?.tune}
+            />
             <div className="diff-header">
                 <h2>Tune Changes Review</h2>
                 <p>Review the proposed changes before applying them to your tune</p>
