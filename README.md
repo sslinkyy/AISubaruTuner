@@ -103,4 +103,4 @@ These agents collaborate through documented APIs and follow strict safety and ac
 
 ## Data Verification
 
-See `docs/data_validation.md` for a checklist of metadata and change details exposed by the platform. Each API response includes enough information for tuners to cross-check ROM metadata, table differences and safety metrics before applying suggestions.
+See `docs/data_validation.md` for a checklist of metadata and change details exposed by the platform. For a sample explanation of a detected AFR issue and how a tune change is presented to the user, read `docs/tune_change_example.md`.
