@@ -112,6 +112,7 @@ from jose import jwt, JWTError
 JWT_ALGORITHM = "HS256"
 JWT_SECRET = os.getenv("JWT_SECRET", "demo_secret")
 DISABLE_JWT_AUTH = os.getenv("DISABLE_JWT_AUTH", "0") == "1"
+logger.info("JWT auth disabled: %s", DISABLE_JWT_AUTH)
 
 
 def verify_token(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
