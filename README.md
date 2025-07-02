@@ -100,3 +100,7 @@ The application coordinates several specialized agents:
 - **supervisor** – oversees all agents, delegating tasks and enforcing standards.
 
 These agents collaborate through documented APIs and follow strict safety and accessibility requirements.
+
+## Data Verification
+
+See `docs/data_validation.md` for a checklist of metadata and change details exposed by the platform. Each API response includes enough information for tuners to cross-check ROM metadata, table differences and safety metrics before applying suggestions.
