@@ -39,6 +39,8 @@ uvicorn backend.main:app --reload
 
 This starts the API at <http://localhost:8000>.
 Set the `JWT_SECRET` environment variable to the shared secret used for verifying
+JWT bearer tokens.
+
 JWT bearer tokens. During development you can bypass authentication entirely by
 setting `DISABLE_JWT_AUTH=1` when launching the server.
 
