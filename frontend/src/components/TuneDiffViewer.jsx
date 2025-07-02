@@ -4,6 +4,7 @@ import CarberryTableDiff from './CarberryTableDiff';
 import AnalysisReport from './AnalysisReport';
 import TuneInfoPanel from './TuneInfoPanel';
 import LoadingSpinner from './LoadingSpinner';
+import WorkflowSafetyPanel from './WorkflowSafetyPanel';
 
 function TuneDiffViewer({ sessionId, analysisData, selectedChanges, onApproval }) {
     const [diffData, setDiffData] = useState(null);
@@ -66,10 +67,15 @@ function TuneDiffViewer({ sessionId, analysisData, selectedChanges, onApproval }
     const getChangeTypeIcon = (changeType) => {
         switch (changeType) {
             case 'increased':
+                return '⬆️';
             case 'decreased':
-            case 'modified':
+                return '⬇️';
             case 'added':
+                return '➕';
             case 'removed':
+                return '➖';
+            case 'modified':
+                return '✏️';
             default:
                 return '';
         }
@@ -154,13 +160,14 @@ function TuneDiffViewer({ sessionId, analysisData, selectedChanges, onApproval }
                     <div key={change.id} className="change-item">
                         <div className="change-header">
                             <div className="change-title">
-                                <span className="change-icon">
+                                <span className="change-icon" aria-hidden="true">
                                     {getChangeTypeIcon(change.changeType)}
                                 </span>
                                 <span className="change-parameter">{change.parameter}</span>
                                 <span
                                     className="impact-badge"
                                     style={{ backgroundColor: getImpactColor(change?.impact || change?.priority) }}
+                                    aria-label={`${change?.impact || change?.priority} impact`}
                                 >
                                     {(change?.impact || change?.priority || 'medium').toUpperCase()}
                                 </span>
@@ -196,7 +203,13 @@ function TuneDiffViewer({ sessionId, analysisData, selectedChanges, onApproval }
                                             <span>Perf: {change.predicted_effect.performance}; </span>
                                         )}
                                         {change.predicted_effect.safety && (
-                                            <span>Safety: {change.predicted_effect.safety}</span>
+                                            <span>Safety: {change.predicted_effect.safety}; </span>
+                                        )}
+                                        {change.predicted_effect.forecast && (
+                                            <span>Forecast: {change.predicted_effect.forecast}; </span>
+                                        )}
+                                        {change.confidence && (
+                                            <span>Confidence: {change.confidence}</span>
                                         )}
                                     </p>
                                 )}
@@ -219,6 +232,13 @@ function TuneDiffViewer({ sessionId, analysisData, selectedChanges, onApproval }
                     romCompatibility={diffData.romCompatibility}
                 />
             )}
+
+            <WorkflowSafetyPanel
+                history={diffData.history || []}
+                chat={diffData.chat || []}
+                checklist={diffData.checklist || []}
+                riskStatement={diffData.risk_statement}
+            />
 
             <div className="diff-actions">
                 <div className="safety-notice">

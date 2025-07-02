@@ -1,5 +1,6 @@
 import React from 'react';
 import LoadingSpinner from './LoadingSpinner';
+import DatalogSummaryPanel from './DatalogSummaryPanel';
 import './AnalysisViewer.css';
 
 function AnalysisViewer({ data }) {
@@ -56,6 +57,7 @@ function AnalysisViewer({ data }) {
             summary.issues_found ||
             issues.length ||
             0,
+        time_gaps: summary.time_gaps || datalogAnalysis.time_gap_count || 0,
     };
 
     const renderIssues = () => {
@@ -284,37 +286,16 @@ function AnalysisViewer({ data }) {
 
                 {renderEnhancedMetrics()}
                 {renderKeyMetrics()}
-
-                <div className="analysis-section full-width">
-                    <h3>Data Summary</h3>
-                    <div className="summary-stats">
-                        <div className="stat-item">
-                            <span className="stat-label">Duration</span>
-                            <span className="stat-value">
-                                {datalog_summary.duration ?
-                                    `${datalog_summary.duration.toFixed(1)}s` :
-                                    'Unknown'
-                                }
-                            </span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="stat-label">Data Points</span>
-                            <span className="stat-value">{datalog_summary.total_rows}</span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="stat-label">Parameters</span>
-                            <span className="stat-value">{datalog_summary.total_columns}</span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="stat-label">Issues Found</span>
-                            <span className="stat-value">{datalog_summary.issues_found}</span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="stat-label">Platform</span>
-                            <span className="stat-value">{platform}</span>
-                        </div>
-                    </div>
-                </div>
+                <DatalogSummaryPanel
+                    summary={{
+                        duration: datalog_summary.duration ? `${datalog_summary.duration.toFixed(1)}s` : 'Unknown',
+                        sample_count: datalog_summary.total_rows,
+                        parameter_count: datalog_summary.total_columns,
+                        time_gaps: datalog_summary.time_gaps
+                    }}
+                    quality={data.quality_metrics?.datalog_quality}
+                    scenarios={data.quality_metrics?.required_scenarios}
+                />
             </div>
 
             <div className="debug-section">

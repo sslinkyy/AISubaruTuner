@@ -5,6 +5,7 @@ import AnalysisViewer from './components/AnalysisViewer';
 import SuggestionsPanel from './components/SuggestionsPanel';
 import TuneDiffViewer from './components/TuneDiffViewer';
 import TuneInfoPanel from './components/TuneInfoPanel';
+import SessionContextPanel from './components/SessionContextPanel';
 import ExportDownloadPanel from './components/ExportDownloadPanel';
 import FeedbackPanel from './components/FeedbackPanel';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -156,6 +157,10 @@ function App() {
 
                 return (
                     <div>
+                        <SessionContextPanel
+                            vehicle={analysisData?.vehicle_info}
+                            session={analysisData?.session_info}
+                        />
                         <TuneInfoPanel
                             romAnalysis={analysisData?.rom_analysis}
                             metadata={analysisData?.analysis_metadata}
