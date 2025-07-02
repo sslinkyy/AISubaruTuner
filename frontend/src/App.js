@@ -4,6 +4,7 @@ import FileUpload from './components/FileUpload';
 import AnalysisViewer from './components/AnalysisViewer';
 import TuneSuggestionsReview from './components/TuneSuggestionsReview';
 import TuneDiffViewer from './components/TuneDiffViewer';
+import TuneTableComparison from './components/TuneTableComparison';
 import TuneInfoPanel from './components/TuneInfoPanel';
 import SessionContextPanel from './components/SessionContextPanel';
 import ExportDownloadPanel from './components/ExportDownloadPanel';
@@ -18,6 +19,7 @@ function App() {
     const [selectedChanges, setSelectedChanges] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [comparisonTables, setComparisonTables] = useState([]);
 
     const handlePackageUpload = (uploadResult) => {
         setSessionId(uploadResult.session_id);
@@ -87,7 +89,8 @@ function App() {
             }
 
             const data = await response.json();
-            setCurrentStep('download');
+            setComparisonTables(data.tables || []);
+            setCurrentStep('comparison');
         } catch (err) {
             setError(err.message);
         } finally {
@@ -105,6 +108,7 @@ function App() {
         setSessionId(null);
         setAnalysisData(null);
         setSelectedChanges([]);
+        setComparisonTables([]);
         setError(null);
     };
 
@@ -209,6 +213,14 @@ function App() {
             case 'apply':
                 return <LoadingSpinner message="Applying changes to your tune..." />;
 
+            case 'comparison':
+                return (
+                    <TuneTableComparison
+                        tables={comparisonTables}
+                        onContinue={() => setCurrentStep('download')}
+                    />
+                );
+
             case 'download':
                 return (
                     <ExportDownloadPanel
@@ -240,6 +252,7 @@ function App() {
                             <div className={`step ${currentStep === 'upload' ? 'active' : ''}`}>Upload</div>
                             <div className={`step ${currentStep === 'suggestions' ? 'active' : ''}`}>Analysis</div>
                             <div className={`step ${currentStep === 'diff' ? 'active' : ''}`}>Review</div>
+                            <div className={`step ${currentStep === 'comparison' ? 'active' : ''}`}>Compare</div>
                             <div className={`step ${currentStep === 'download' ? 'active' : ''}`}>Download</div>
                             <div className={`step ${currentStep === 'feedback' ? 'active' : ''}`}>Feedback</div>
                         </div>

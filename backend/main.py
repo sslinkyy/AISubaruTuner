@@ -766,6 +766,77 @@ async def export_tune_changes(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/apply_changes")
+async def apply_changes(
+    *,
+    session_id: str = Body(..., embed=True),
+    selected_changes: Optional[List[str]] = Body(None, embed=True),
+    user: dict = Depends(verify_token),
+):
+    """Apply selected tune changes and return before/after table data."""
+    session = active_sessions.get(session_id)
+    if not session:
+        logger.warning(f"Apply changes failed - session {session_id} not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Session not found. Upload files and run analysis first.",
+        )
+
+    if "analysis" not in session:
+        raise HTTPException(
+            status_code=400,
+            detail="Analysis not completed for this session",
+        )
+
+    try:
+        datalog_path = session["datalog"]["file_path"]
+        tune_path = session["tune"]["file_path"]
+        definition_path = session.get("definition", {}).get("file_path")
+
+        results = rom_manager.analyze_rom_package(
+            datalog_path, tune_path, definition_path
+        )
+
+        tune_changes = results["detailed_data"]["tune_change_details"]
+        if selected_changes:
+            tune_changes = [
+                c
+                for c in tune_changes
+                if c.get("id") in selected_changes
+                or c.get("table_name") in selected_changes
+            ]
+
+        tables_modified = {}
+        for change in tune_changes:
+            t_name = change.get("table_name")
+            tables_modified.setdefault(t_name, []).append(change)
+
+        response_tables = []
+        for t_name, changes in tables_modified.items():
+            table_data = rom_manager.get_table_data(session, t_name)
+            if not table_data:
+                logger.warning(f"Table data missing for {t_name}")
+                continue
+            diff = rom_manager.generate_carberry_diff(table_data, changes)
+            response_tables.append(
+                {
+                    "id": t_name.replace(" ", "_").lower(),
+                    "name": t_name,
+                    "axes": {
+                        "x": diff.get("rpm_axis", []),
+                        "y": diff.get("load_axis", []),
+                    },
+                    "original": diff.get("current", []),
+                    "modified": diff.get("proposed", []),
+                }
+            )
+
+        return {"session_id": session_id, "tables": to_python_types(response_tables)}
+    except Exception as e:
+        logger.error(f"Failed to apply changes for session {session_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to apply tune changes")
+
+
 @app.get("/api/system/status")
 async def get_system_status(user: dict = Depends(verify_token)):
     return {
