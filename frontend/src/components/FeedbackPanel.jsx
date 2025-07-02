@@ -69,7 +69,7 @@ function FeedbackPanel({ sessionId, onSubmit }) {
         return (
             <div className="feedback-panel">
                 <div className="feedback-success">
-                    <div className="success-icon">🎉</div>
+                    <div className="success-icon"></div>
                     <h2>Thank You for Your Feedback!</h2>
                     <p>Your feedback helps us improve the ECU Tuning Assistant.</p>
                     <div className="success-message">
@@ -83,7 +83,7 @@ function FeedbackPanel({ sessionId, onSubmit }) {
     return (
         <div className="feedback-panel">
             <div className="feedback-header">
-                <h2>📝 Share Your Experience</h2>
+                <h2>Share Your Experience</h2>
                 <p>Help us improve by sharing your feedback on the tuning process</p>
             </div>
 
@@ -98,6 +98,7 @@ function FeedbackPanel({ sessionId, onSubmit }) {
                                 className={`star ${star <= rating ? 'active' : ''}`}
                                 onClick={() => handleRatingClick(star)}
                                 disabled={submitting}
+                                aria-label={`Rate ${star} out of 5`}
                             >
                                 ⭐
                             </button>
@@ -126,22 +127,22 @@ function FeedbackPanel({ sessionId, onSubmit }) {
                         <div className="question-item">
                             <span className="question">Was the analysis accurate?</span>
                             <div className="quick-rating">
-                                <button type="button" className="quick-btn positive">👍</button>
-                                <button type="button" className="quick-btn negative">👎</button>
+                                <button type="button" className="quick-btn positive" aria-label="Yes"></button>
+                                <button type="button" className="quick-btn negative" aria-label="No"></button>
                             </div>
                         </div>
                         <div className="question-item">
                             <span className="question">Were suggestions helpful?</span>
                             <div className="quick-rating">
-                                <button type="button" className="quick-btn positive">👍</button>
-                                <button type="button" className="quick-btn negative">👎</button>
+                                <button type="button" className="quick-btn positive" aria-label="Yes"></button>
+                                <button type="button" className="quick-btn negative" aria-label="No"></button>
                             </div>
                         </div>
                         <div className="question-item">
                             <span className="question">Easy to use interface?</span>
                             <div className="quick-rating">
-                                <button type="button" className="quick-btn positive">👍</button>
-                                <button type="button" className="quick-btn negative">👎</button>
+                                <button type="button" className="quick-btn positive" aria-label="Yes"></button>
+                                <button type="button" className="quick-btn negative" aria-label="No"></button>
                             </div>
                         </div>
                     </div>

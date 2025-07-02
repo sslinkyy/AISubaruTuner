@@ -1,0 +1,29 @@
+.carberry-table {
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 0.9rem;
+}
+
+.carberry-table th,
+.carberry-table td {
+  border: 1px solid #ccc;
+  padding: 4px 6px;
+  text-align: right;
+}
+
+.carberry-table th {
+  background-color: #f8f9fa;
+}
+
+.carberry-table td.increase {
+  background-color: #d4edda;
+}
+
+.carberry-table td.decrease {
+  background-color: #f8d7da;
+}
+
+.units {
+  font-size: 0.8rem;
+  color: #555;
+}

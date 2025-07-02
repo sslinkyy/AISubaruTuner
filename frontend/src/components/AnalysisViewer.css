@@ -174,6 +174,37 @@
     gap: 1rem;
 }
 
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.metric-item {
+    background: white;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.metric-label {
+    display: block;
+    color: #666;
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.metric-value {
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.metric-value.high { color: #28a745; }
+.metric-value.medium { color: #ffc107; }
+.metric-value.low { color: #dc3545; }
+
 .stat-item {
     background: white;
     padding: 1rem;

@@ -10,7 +10,14 @@ import logging
 import pandas as pd
 from pathlib import Path
 
-# Import your modules
+if __package__ in {None, ""}:
+    # Allow running this file directly via `python backend/main.py`
+    import sys
+
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    __package__ = "backend"
+
+# Import project modules with fallbacks for direct execution
 try:
     from .tune_diff import compute_tune_diff, TuneDiffResult
     from .datalog_parser import parse_datalog, detect_issues
@@ -18,13 +25,35 @@ try:
     from .safety_checks import run_safety_checks
     from .tune_optimizer import optimize_tune
 
+    from backend.tune_diff import compute_tune_diff, TuneDiffResult
+    from backend.datalog_parser import parse_datalog, detect_issues
+    from backend.ai_suggestions import generate_suggestions
+    from backend.safety_checks import run_safety_checks
+    from backend.tune_optimizer import optimize_tune
     legacy_modules_available = True
-except ImportError as e:
-    logging.warning(f"Legacy modules not available: {e}")
-    legacy_modules_available = False
+except ImportError:
+    try:
+        from .tune_diff import compute_tune_diff, TuneDiffResult
+        from .datalog_parser import parse_datalog, detect_issues
+        from .ai_suggestions import generate_suggestions
+        from .safety_checks import run_safety_checks
+        from .tune_optimizer import optimize_tune
+        legacy_modules_available = True
+    except ImportError as e:
+        logging.warning(f"Legacy modules not available: {e}")
+        legacy_modules_available = False
 
 from .rom_integration import create_rom_integration_manager
 from . import enhanced_ai_suggestions
+try:
+    from backend.rom_integration import create_rom_integration_manager
+except ImportError:
+    from .rom_integration import create_rom_integration_manager
+
+try:
+    from backend import enhanced_ai_suggestions
+except Exception:  # pragma: no cover - fallback for direct execution
+    from . import enhanced_ai_suggestions
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -49,7 +78,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-security = HTTPBearer()
+# Allow optional bearer token when auth is disabled
+security = HTTPBearer(auto_error=False)
 rom_manager = create_rom_integration_manager()
 active_sessions = {}
 usage_stats = {
@@ -85,9 +115,44 @@ def to_python_types(obj):
         return obj
 
 
+from jose import jwt, JWTError
+
+JWT_ALGORITHM = "HS256"
+JWT_SECRET = os.getenv("JWT_SECRET", "demo_secret")
+
+
+
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    # TODO: Implement real JWT verification
-    return {"user_id": "demo_user", "role": "user"}
+    """Validate JWT bearer token and return user information."""
+
+DISABLE_JWT_AUTH = os.getenv("DISABLE_JWT_AUTH", "0") == "1"
+logger.info("JWT auth disabled: %s", DISABLE_JWT_AUTH)
+
+
+def verify_token(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    """Validate JWT bearer token and return user information.
+
+    When `DISABLE_JWT_AUTH` environment variable is set to "1", this function
+    allows anonymous access and returns a default development user.
+    """
+    if DISABLE_JWT_AUTH:
+        return {"user_id": "dev_user", "role": "admin"}
+
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Missing authorization token")
+
+
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get("sub")
+        role = payload.get("role", "user")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return {"user_id": user_id, "role": role}
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
 
 
 def is_admin(user: dict = Depends(verify_token)):
@@ -121,8 +186,6 @@ def validate_file_type(filename: str, allowed_extensions: List[str]):
         raise HTTPException(
             status_code=400, detail=f"Invalid file type. Allowed: {allowed_extensions}"
         )
-
-
 def detect_platform(
     datalog_path: str, tune_path: str = None, definition_path: str = None
 ) -> str:
@@ -298,6 +361,24 @@ async def analyze_package(
                 enhanced_results.setdefault("datalog_analysis", {}).setdefault(
                     "datalog", {}
                 )["data"] = datalog_records
+
+                da_summary = {
+                    "total_rows": len(datalog_df),
+                    "total_columns": len(datalog_df.columns),
+                }
+                if "Time (msec)" in datalog_df.columns and len(datalog_df) > 1:
+                    da_summary["duration"] = (
+                        datalog_df["Time (msec)"].iloc[-1] - datalog_df["Time (msec)"].iloc[0]
+                    ) / 1000.0
+                enhanced_results.setdefault("datalog_analysis", {}).setdefault(
+                    "datalog", {}
+                )["data"] = datalog_records
+                enhanced_results["datalog_analysis"].setdefault("summary", {}).update(da_summary)
+
+                enhanced_results.setdefault("datalog_analysis", {}).setdefault(
+                    "datalog", {}
+                )["data"] = datalog_records
+
                 logger.info(
                     f"Injected {len(datalog_records)} datalog records into analysis results"
                 )
@@ -362,6 +443,9 @@ async def analyze_package(
                     enhanced_ai_suggestions.generate_enhanced_ai_suggestions(
                         {
                             "datalog": enhanced_results.get("datalog_analysis", {}),
+                            "datalog": enhanced_results.get("datalog_analysis", {}).get(
+                                "datalog", {}
+                            ),
                             "tune": enhanced_results.get("tune_changes", {}),
                             "platform": platform,
                             "issues": enhanced_results.get("datalog_analysis", {}).get(
@@ -488,6 +572,41 @@ async def get_table_data(
         return to_python_types(table_data)
     except Exception as e:
         logger.error(f"Failed to get table data for {table_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/session/{session_id}/table_diff/{table_name}")
+async def get_table_diff(
+    session_id: str, table_name: str, user: dict = Depends(verify_token)
+):
+    """Return before/after values for a ROM table in Carberry format"""
+    session = active_sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if "analysis" not in session:
+        raise HTTPException(status_code=400, detail="Analysis not completed")
+
+    try:
+        datalog_path = session["datalog"]["file_path"]
+        tune_path = session["tune"]["file_path"]
+        definition_path = session.get("definition", {}).get("file_path")
+
+        results = rom_manager.analyze_rom_package(
+            datalog_path, tune_path, definition_path
+        )
+        tune_changes = results["detailed_data"]["tune_change_details"]
+
+        table_data = rom_manager.get_table_data(session, table_name)
+        if not table_data:
+            raise HTTPException(
+                status_code=404, detail=f"Table '{table_name}' not found"
+            )
+
+        diff = rom_manager.generate_carberry_diff(table_data, tune_changes)
+        return to_python_types(diff)
+    except Exception as e:
+        logger.error(f"Failed to get table diff for {table_name}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

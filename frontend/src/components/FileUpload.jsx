@@ -212,7 +212,7 @@ function FileUpload({ onPackageUpload }) {
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                 >
-                    <div className="upload-icon">📊</div>
+                    <div className="upload-icon"></div>
                     <h3>Datalog File</h3>
                     <p>CSV or LOG format</p>
                     <input
@@ -232,7 +232,7 @@ function FileUpload({ onPackageUpload }) {
                             <div className="file-size">
                                 {(datalog.size / 1024 / 1024).toFixed(2)} MB
                             </div>
-                            <div className="file-status">✅ Ready</div>
+                            <div className="file-status"> Ready</div>
                         </div>
                     )}
                 </div>
@@ -243,7 +243,7 @@ function FileUpload({ onPackageUpload }) {
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                 >
-                    <div className="upload-icon">⚙️</div>
+                    <div className="upload-icon"></div>
                     <h3>Tune File</h3>
                     <p>BIN, HEX, or ROM format</p>
                     <input
@@ -263,7 +263,7 @@ function FileUpload({ onPackageUpload }) {
                             <div className="file-size">
                                 {(tune.size / 1024).toFixed(2)} KB
                             </div>
-                            <div className="file-status">✅ Ready</div>
+                            <div className="file-status"> Ready</div>
                         </div>
                     )}
                 </div>
@@ -274,7 +274,7 @@ function FileUpload({ onPackageUpload }) {
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                 >
-                    <div className="upload-icon">📄</div>
+                    <div className="upload-icon"></div>
                     <h3>XML Definition File (Optional)</h3>
                     <p>Upload XML file describing your ROM tables</p>
                     <input
@@ -294,14 +294,14 @@ function FileUpload({ onPackageUpload }) {
                             <div className="file-size">
                                 {(definition.size / 1024).toFixed(2)} KB
                             </div>
-                            <div className="file-status">✅ Ready</div>
+                            <div className="file-status"> Ready</div>
                         </div>
                     )}
                 </div>
             </div>
 
-            {error && <div className="error-message">❌ {error}</div>}
-            {uploadProgress && <div className="progress-message">🔄 {uploadProgress}</div>}
+            {error && <div className="error-message">{error}</div>}
+            {uploadProgress && <div className="progress-message">{uploadProgress}</div>}
 
             <div className="upload-actions">
                 <button
@@ -309,7 +309,7 @@ function FileUpload({ onPackageUpload }) {
                     onClick={handleUpload}
                     disabled={!datalog || !tune || uploading}
                 >
-                    {uploading ? '🔄 Uploading & Analyzing...' : '🚀 Upload & Analyze'}
+                    {uploading ? 'Uploading & Analyzing...' : 'Upload & Analyze'}
                 </button>
 
                 {(datalog || tune || definition) && !uploading && (
@@ -317,7 +317,7 @@ function FileUpload({ onPackageUpload }) {
                         className="reset-btn"
                         onClick={resetFiles}
                     >
-                        🗑️ Clear Files
+                         Clear Files
                     </button>
                 )}
             </div>

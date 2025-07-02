@@ -16,6 +16,7 @@ from .tuning_engine_updated import TuningEngine
 
 logger = logging.getLogger(__name__)
 
+
 class ROMIntegrationManager:
     """Production-ready integration manager for ROM analysis workflow"""
 
@@ -25,8 +26,9 @@ class ROMIntegrationManager:
         self.tuning_engine = TuningEngine()
         self.cache = {}
 
-    def analyze_rom_package(self, datalog_path: str, tune_path: str, 
-                           definition_path: Optional[str] = None) -> Dict[str, Any]:
+    def analyze_rom_package(
+        self, datalog_path: str, tune_path: str, definition_path: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Complete ROM package analysis workflow
 
@@ -39,13 +41,17 @@ class ROMIntegrationManager:
             Complete analysis results
         """
         try:
-            logger.info(f"Starting ROM package analysis: datalog={datalog_path}, tune={tune_path}, definition={definition_path}")
+            logger.info(
+                f"Starting ROM package analysis: datalog={datalog_path}, tune={tune_path}, definition={definition_path}"
+            )
 
             # Step 1: Parse XML definition if provided
             table_definitions = None
             if definition_path:
                 table_definitions = self._parse_xml_definition(definition_path)
-                logger.info(f"Loaded {table_definitions['table_count']} table definitions")
+                logger.info(
+                    f"Loaded {table_definitions['table_count']} table definitions"
+                )
 
             # Step 2: Parse ROM file
             rom_data = self._parse_rom_file(tune_path, table_definitions)
@@ -53,14 +59,18 @@ class ROMIntegrationManager:
 
             # Step 3: Analyze datalog (using existing datalog analyzer)
             datalog_analysis = self._analyze_datalog(datalog_path)
-            logger.info(f"Datalog analysis complete: {len(datalog_analysis.get('issues', []))} issues found")
+            logger.info(
+                f"Datalog analysis complete: {len(datalog_analysis.get('issues', []))} issues found"
+            )
 
             # Step 4: Generate tune changes
             tune_changes = self._generate_tune_changes(rom_data, datalog_analysis)
             logger.info(f"Generated {tune_changes['total_changes']} tune changes")
 
             # Step 5: Compile comprehensive results
-            results = self._compile_results(rom_data, datalog_analysis, tune_changes, table_definitions)
+            results = self._compile_results(
+                rom_data, datalog_analysis, tune_changes, table_definitions
+            )
 
             logger.info("ROM package analysis completed successfully")
             return results
@@ -83,7 +93,9 @@ class ROMIntegrationManager:
             # Validate definitions
             validation = self.xml_parser.validate_definition(definitions)
             if validation["warnings"]:
-                logger.warning(f"XML validation warnings: {len(validation['warnings'])}")
+                logger.warning(
+                    f"XML validation warnings: {len(validation['warnings'])}"
+                )
 
             # Cache results
             self.cache[cache_key] = definitions
@@ -94,7 +106,9 @@ class ROMIntegrationManager:
             logger.error(f"XML definition parsing failed: {e}")
             raise ValueError(f"Failed to parse XML definition: {e}")
 
-    def _parse_rom_file(self, tune_path: str, table_definitions: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def _parse_rom_file(
+        self, tune_path: str, table_definitions: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Parse ROM file with optional XML definitions"""
         try:
             # Set table definitions if available
@@ -129,7 +143,7 @@ class ROMIntegrationManager:
             analysis["datalog"] = {
                 "data": datalog_df.to_dict(orient="records"),
                 "columns": list(datalog_df.columns),
-                "total_rows": len(datalog_df)
+                "total_rows": len(datalog_df),
             }
 
             return analysis
@@ -149,7 +163,7 @@ class ROMIntegrationManager:
                 "total_records": 1000,
                 "duration_minutes": 10,
                 "avg_rpm": 3500,
-                "max_rpm": 6500
+                "max_rpm": 6500,
             },
             "issues": [
                 {
@@ -158,7 +172,7 @@ class ROMIntegrationManager:
                     "severity": "high",
                     "description": "AFR values above 15.5 detected",
                     "count": 45,
-                    "parameter": "AFR"
+                    "parameter": "AFR",
                 }
             ],
             "suggestions": [
@@ -169,32 +183,32 @@ class ROMIntegrationManager:
                     "change_type": "increase",
                     "percentage": 8.0,
                     "priority": "high",
-                    "description": "Enrich fuel map to address lean conditions"
+                    "description": "Enrich fuel map to address lean conditions",
                 }
             ],
             "safety": {
                 "overall_status": "caution",
                 "critical_issues": ["Lean AFR conditions detected"],
-                "warnings": ["Monitor AFR closely"]
+                "warnings": ["Monitor AFR closely"],
             },
             "performance": {
                 "avg_rpm": 3500,
                 "max_rpm": 6500,
                 "avg_load": 1.8,
-                "max_load": 2.5
+                "max_load": 2.5,
             },
-            "datalog": {
-                "data": [],
-                "columns": [],
-                "total_rows": 0
-            }
+            "datalog": {"data": [], "columns": [], "total_rows": 0},
         }
 
-    def _generate_tune_changes(self, rom_data: Dict[str, Any], datalog_analysis: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_tune_changes(
+        self, rom_data: Dict[str, Any], datalog_analysis: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Generate tune changes using the enhanced tuning engine"""
         try:
             suggestions = datalog_analysis.get("suggestions", [])
-            tune_changes = self.tuning_engine.generate_tune_changes(rom_data, datalog_analysis, suggestions)
+            tune_changes = self.tuning_engine.generate_tune_changes(
+                rom_data, datalog_analysis, suggestions
+            )
 
             return tune_changes
 
@@ -202,15 +216,19 @@ class ROMIntegrationManager:
             logger.error(f"Tune change generation failed: {e}")
             raise ValueError(f"Failed to generate tune changes: {e}")
 
-    def _compile_results(self, rom_data: Dict[str, Any], datalog_analysis: Dict[str, Any], 
-                        tune_changes: Dict[str, Any], table_definitions: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def _compile_results(
+        self,
+        rom_data: Dict[str, Any],
+        datalog_analysis: Dict[str, Any],
+        tune_changes: Dict[str, Any],
+        table_definitions: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """Compile comprehensive analysis results"""
 
         results = {
             "status": "success",
             "analysis_type": "enhanced_rom_analysis",
             "timestamp": self._get_timestamp(),
-
             # ROM Analysis Results
             "rom_analysis": {
                 "ecu_id": rom_data.get("ecu_id"),
@@ -219,54 +237,75 @@ class ROMIntegrationManager:
                 "definition_used": table_definitions is not None,
                 "definition_source": rom_data.get("definition_source"),
                 "checksum": rom_data.get("checksum"),
-                "format": rom_data.get("rom_info", {}).get("format", "unknown")
+                "format": rom_data.get("rom_info", {}).get("format", "unknown"),
             },
-
             # Datalog Analysis Results
             "datalog_analysis": {
                 "summary": datalog_analysis.get("summary", {}),
-                "datalog": datalog_analysis.get("datalog", {}),  # Include raw datalog data here
+                "datalog": datalog_analysis.get(
+                    "datalog", {}
+                ),  # Include raw datalog data here
                 "issues_found": len(datalog_analysis.get("issues", [])),
-                "critical_issues": [i for i in datalog_analysis.get("issues", []) if i.get("severity") == "critical"],
-                "safety_status": datalog_analysis.get("safety", {}).get("overall_status", "unknown"),
-                "performance_metrics": datalog_analysis.get("performance", {})
+                "critical_issues": [
+                    i
+                    for i in datalog_analysis.get("issues", [])
+                    if i.get("severity") == "critical"
+                ],
+                "safety_status": datalog_analysis.get("safety", {}).get(
+                    "overall_status", "unknown"
+                ),
+                "performance_metrics": datalog_analysis.get("performance", {}),
             },
-
             # Tune Changes
             "tune_changes": {
                 "total_changes": tune_changes.get("total_changes", 0),
                 "safety_rating": tune_changes.get("safety_rating", "unknown"),
-                "estimated_power_gain": tune_changes.get("estimated_power_gain", "unknown"),
-                "changes_by_priority": tune_changes.get("change_summary", {}).get("by_priority", {}),
-                "tables_affected": tune_changes.get("change_summary", {}).get("by_table_type", {}),
-                "validation_status": tune_changes.get("validation", {}).get("status", "unknown")
+                "estimated_power_gain": tune_changes.get(
+                    "estimated_power_gain", "unknown"
+                ),
+                "changes_by_priority": tune_changes.get("change_summary", {}).get(
+                    "by_priority", {}
+                ),
+                "tables_affected": tune_changes.get("change_summary", {}).get(
+                    "by_table_type", {}
+                ),
+                "validation_status": tune_changes.get("validation", {}).get(
+                    "status", "unknown"
+                ),
             },
-
             # Detailed Data (for API responses)
             "detailed_data": {
                 "rom_tables": self._extract_table_summary(rom_data),
                 "datalog_issues": datalog_analysis.get("issues", []),
                 "suggestions": datalog_analysis.get("suggestions", []),
                 "tune_change_details": tune_changes.get("changes", []),
-                "safety_warnings": tune_changes.get("safety_warnings", [])
+                "safety_warnings": tune_changes.get("safety_warnings", []),
             },
-
             # Quality Metrics
             "quality_metrics": {
                 "rom_compatibility": tune_changes.get("rom_compatibility", {}),
-                "analysis_confidence": self._calculate_analysis_confidence(rom_data, datalog_analysis, table_definitions),
-                "data_completeness": self._assess_data_completeness(rom_data, datalog_analysis),
-                "recommendation_reliability": self._assess_recommendation_reliability(tune_changes)
+                "analysis_confidence": self._calculate_analysis_confidence(
+                    rom_data, datalog_analysis, table_definitions
+                ),
+                "data_completeness": self._assess_data_completeness(
+                    rom_data, datalog_analysis
+                ),
+                "recommendation_reliability": self._assess_recommendation_reliability(
+                    tune_changes
+                ),
             },
-
             # Metadata
             "metadata": {
                 "parser_version": "3.0.0",
                 "xml_definition_used": table_definitions is not None,
-                "xml_table_count": table_definitions.get("table_count", 0) if table_definitions else 0,
+                "xml_table_count": (
+                    table_definitions.get("table_count", 0) if table_definitions else 0
+                ),
                 "analysis_duration": "calculated_in_production",
-                "features_used": self._get_features_used(table_definitions, rom_data, datalog_analysis)
-            }
+                "features_used": self._get_features_used(
+                    table_definitions, rom_data, datalog_analysis
+                ),
+            },
         }
 
         return results
@@ -278,20 +317,26 @@ class ROMIntegrationManager:
 
         for table_name, table_data in tables.items():
             if isinstance(table_data, dict) and table_data.get("data"):
-                summary.append({
-                    "name": table_name,
-                    "address": table_data.get("address", "unknown"),
-                    "size": table_data.get("size", {}),
-                    "storage_type": table_data.get("storage_type", "unknown"),
-                    "has_axes": bool(table_data.get("axes", {})),
-                    "scaling_applied": table_data.get("scaling_applied", False),
-                    "units": table_data.get("scaling", {}).get("units", "")
-                })
+                summary.append(
+                    {
+                        "name": table_name,
+                        "address": table_data.get("address", "unknown"),
+                        "size": table_data.get("size", {}),
+                        "storage_type": table_data.get("storage_type", "unknown"),
+                        "has_axes": bool(table_data.get("axes", {})),
+                        "scaling_applied": table_data.get("scaling_applied", False),
+                        "units": table_data.get("scaling", {}).get("units", ""),
+                    }
+                )
 
         return summary[:50]  # Limit for API response
 
-    def _calculate_analysis_confidence(self, rom_data: Dict[str, Any], datalog_analysis: Dict[str, Any], 
-                                     table_definitions: Optional[Dict[str, Any]]) -> str:
+    def _calculate_analysis_confidence(
+        self,
+        rom_data: Dict[str, Any],
+        datalog_analysis: Dict[str, Any],
+        table_definitions: Optional[Dict[str, Any]],
+    ) -> str:
         """Calculate overall analysis confidence"""
 
         confidence_score = 0
@@ -317,7 +362,9 @@ class ROMIntegrationManager:
         else:
             return "low"
 
-    def _assess_data_completeness(self, rom_data: Dict[str, Any], datalog_analysis: Dict[str, Any]) -> str:
+    def _assess_data_completeness(
+        self, rom_data: Dict[str, Any], datalog_analysis: Dict[str, Any]
+    ) -> str:
         """Assess completeness of available data"""
 
         completeness_score = 0
@@ -355,19 +402,27 @@ class ROMIntegrationManager:
 
         safety_rating = tune_changes.get("safety_rating", "unknown")
         validation_status = tune_changes.get("validation", {}).get("status", "unknown")
-        rom_compatibility = tune_changes.get("rom_compatibility", {}).get("status", "unknown")
+        rom_compatibility = tune_changes.get("rom_compatibility", {}).get(
+            "status", "unknown"
+        )
 
-        if (safety_rating in ["Safe", "Conservative"] and 
-            validation_status == "valid" and 
-            rom_compatibility == "compatible"):
+        if (
+            safety_rating in ["Safe", "Conservative"]
+            and validation_status == "valid"
+            and rom_compatibility == "compatible"
+        ):
             return "high"
         elif safety_rating in ["Moderate"] and validation_status == "valid":
             return "medium"
         else:
             return "low"
 
-    def _get_features_used(self, table_definitions: Optional[Dict[str, Any]], 
-                          rom_data: Dict[str, Any], datalog_analysis: Dict[str, Any]) -> List[str]:
+    def _get_features_used(
+        self,
+        table_definitions: Optional[Dict[str, Any]],
+        rom_data: Dict[str, Any],
+        datalog_analysis: Dict[str, Any],
+    ) -> List[str]:
         """Get list of features used in analysis"""
 
         features = []
@@ -391,9 +446,12 @@ class ROMIntegrationManager:
     def _get_timestamp(self) -> str:
         """Get current timestamp"""
         from datetime import datetime
+
         return datetime.utcnow().isoformat()
 
-    def get_table_data(self, session_data: Dict[str, Any], table_name: str) -> Optional[Dict[str, Any]]:
+    def get_table_data(
+        self, session_data: Dict[str, Any], table_name: str
+    ) -> Optional[Dict[str, Any]]:
         """Get specific table data for API endpoints"""
         try:
             tune_path = session_data["tune"]["file_path"]
@@ -425,28 +483,64 @@ class ROMIntegrationManager:
                 "scaling": table_data.get("scaling", {}),
                 "address": table_data.get("address"),
                 "size": table_data.get("size", {}),
-                "storage_type": table_data.get("storage_type", "unknown")
+                "storage_type": table_data.get("storage_type", "unknown"),
             }
 
         except Exception as e:
             logger.error(f"Failed to get table data for {table_name}: {e}")
             return None
 
+    def generate_carberry_diff(
+        self, table_data: Dict[str, Any], tune_changes: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """Generate before/after diff in RomRaider Carberry table format"""
+        try:
+            base = [row[:] for row in table_data.get("data", [])]
+            proposed = [row[:] for row in base]
+            diff = [[0 for _ in row] for row in base]
+
+            for change in tune_changes:
+                for cell in change.get("cell_changes", []):
+                    r = cell.get("row")
+                    c = cell.get("col")
+                    if r is None or c is None:
+                        continue
+                    if r < len(proposed) and c < len(proposed[r]):
+                        new_val = cell.get("new_value", proposed[r][c])
+                        diff[r][c] = new_val - proposed[r][c]
+                        proposed[r][c] = new_val
+
+            return {
+                "rpm_axis": table_data.get("rpm_axis", []),
+                "load_axis": table_data.get("load_axis", []),
+                "current": base,
+                "proposed": proposed,
+                "difference": diff,
+                "units": table_data.get("scaling", {}).get("units", ""),
+            }
+        except Exception as e:
+            logger.error(f"Failed to generate Carberry diff: {e}")
+            return {}
+
     def clear_cache(self):
         """Clear internal cache"""
         self.cache.clear()
         logger.info("ROM integration cache cleared")
+
 
 # Convenience functions for main.py integration
 def create_rom_integration_manager() -> ROMIntegrationManager:
     """Create and return ROM integration manager instance"""
     return ROMIntegrationManager()
 
-def analyze_complete_package(datalog_path: str, tune_path: str, 
-                           definition_path: Optional[str] = None) -> Dict[str, Any]:
+
+def analyze_complete_package(
+    datalog_path: str, tune_path: str, definition_path: Optional[str] = None
+) -> Dict[str, Any]:
     """Convenience function for complete package analysis"""
     manager = create_rom_integration_manager()
     return manager.analyze_rom_package(datalog_path, tune_path, definition_path)
+
 
 # Example usage
 if __name__ == "__main__":
@@ -456,7 +550,7 @@ if __name__ == "__main__":
     # This would be used with actual files
     # results = manager.analyze_rom_package(
     #     datalog_path="path/to/datalog.csv",
-    #     tune_path="path/to/tune.bin", 
+    #     tune_path="path/to/tune.bin",
     #     definition_path="path/to/definition.xml"
     # )
     # print(f"Analysis complete: {results['rom_analysis']['tables_parsed']} tables, {results['tune_changes']['total_changes']} changes")
