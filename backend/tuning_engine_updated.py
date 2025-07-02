@@ -741,7 +741,9 @@ class TuningEngine:
             compatibility["issues"].append("Low table count - definition may be incomplete")
             compatibility["confidence"] = "medium"
         elif table_count > 500:
-            compatibility["recommendations"].append("High table count - verify definition accuracy")
+            compatibility["recommendations"].append(
+                f"High table count ({table_count}) - verify definition accuracy"
+            )
 
         # Check for definition source
         if not rom_data.get("definition_source"):
