@@ -149,9 +149,7 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
                                     className="impact-badge"
                                     style={{ backgroundColor: getImpactColor(change?.impact || change?.priority) }}
                                 >
-                                    {(change.impact || 'medium').toUpperCase()
                                     {(change?.impact || change?.priority || 'medium').toUpperCase()}
-
                                 </span>
                             </div>
                         </div>
