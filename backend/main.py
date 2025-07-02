@@ -451,6 +451,7 @@ async def analyze_package(
                     "analysis_confidence": enhanced_results["quality_metrics"].get(
                         "analysis_confidence", 0
                     ),
+                    "parser_version": enhanced_results.get("metadata", {}).get("parser_version"),
                 }
             )
 
@@ -502,6 +503,20 @@ async def analyze_package(
             "xml_definition_available": definition_path is not None,
             "legacy_fallback_used": legacy_results is not None,
             "total_processing_time": "calculated_in_production",
+        }
+
+        response_data["analysis_metadata"] = analysis_metadata
+        response_data["file_info"] = {
+            "tune": {
+                "filename": session["tune"]["filename"],
+                "hash": session["tune"]["hash"],
+                "size": os.path.getsize(tune_path) if os.path.exists(tune_path) else 0,
+            },
+            "datalog": {
+                "filename": session["datalog"]["filename"],
+                "hash": session["datalog"]["hash"],
+                "size": os.path.getsize(datalog_path) if os.path.exists(datalog_path) else 0,
+            },
         }
 
         return to_python_types(response_data)

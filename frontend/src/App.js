@@ -4,6 +4,7 @@ import FileUpload from './components/FileUpload';
 import AnalysisViewer from './components/AnalysisViewer';
 import SuggestionsPanel from './components/SuggestionsPanel';
 import TuneDiffViewer from './components/TuneDiffViewer';
+import TuneInfoPanel from './components/TuneInfoPanel';
 import ExportDownloadPanel from './components/ExportDownloadPanel';
 import FeedbackPanel from './components/FeedbackPanel';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -155,6 +156,11 @@ function App() {
 
                 return (
                     <div>
+                        <TuneInfoPanel
+                            romAnalysis={analysisData?.rom_analysis}
+                            metadata={analysisData?.analysis_metadata}
+                            tuneFile={analysisData?.file_info?.tune}
+                        />
                         <AnalysisViewer data={analysisData} />
                         <SuggestionsPanel
                             suggestions={suggestions}
@@ -191,6 +197,7 @@ function App() {
                 return (
                     <TuneDiffViewer
                         sessionId={sessionId}
+                        analysisData={analysisData}
                         selectedChanges={selectedChanges}
                         onApproval={handleDiffApproval}
                     />

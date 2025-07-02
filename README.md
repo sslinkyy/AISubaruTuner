@@ -101,6 +101,8 @@ The application coordinates several specialized agents:
 
 These agents collaborate through documented APIs and follow strict safety and accessibility requirements.
 
+The UI now includes a **Tune Info Panel** that exposes ROM metadata such as file name, checksum, parser version and table counts for each session.
+
 ## Data Verification
 
 See `docs/data_validation.md` for a checklist of metadata and change details exposed by the platform. For a sample explanation of a detected AFR issue and how a tune change is presented to the user, read `docs/tune_change_example.md`.
