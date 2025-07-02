@@ -94,8 +94,13 @@ function App() {
             }
 
             const data = await response.json();
-            setComparisonTables(data.tables || []);
-            setCurrentStep('comparison');
+            if (data.tables && data.tables.length > 0) {
+                setComparisonTables(data.tables);
+                setCurrentStep('comparison');
+            } else {
+                setError('No table changes were generated for the selected suggestions.');
+                setCurrentStep('diff');
+            }
         } catch (err) {
             setCurrentStep('diff');
             setError(err.message);
