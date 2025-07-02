@@ -158,20 +158,25 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
                             <div className="value-comparison">
                                 <div className="old-value">
                                     <span className="value-label">Current:</span>
-                                    <span className="value">{change.oldValue}</span>
+                                    <span className="value">{change.summary?.old_range || 'N/A'}</span>
                                 </div>
                                 <div className="arrow">→</div>
                                 <div className="new-value">
                                     <span className="value-label">New:</span>
-                                    <span className="value">{change.newValue}</span>
+                                    <span className="value">{change.summary?.new_range || 'N/A'}</span>
                                 </div>
                             </div>
 
                             <div className="change-info">
                                 <p className="change-description">{change.description}</p>
                                 <p className="affected-cells">
-                                    Affects {change.affectedCells} tune map cells
+                                    Affects {change.affected_cells} tune map cells
                                 </p>
+                                {change.summary && (
+                                    <p className="change-stats">
+                                        Avg {change.summary.avg_change}, Max {change.summary.max_change}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
