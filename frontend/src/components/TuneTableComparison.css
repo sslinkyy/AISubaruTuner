@@ -40,3 +40,6 @@
   padding: 8px 16px;
   font-size: 1rem;
 }
+.changed-cell {
+  background-color: #fff3cd;
+}
