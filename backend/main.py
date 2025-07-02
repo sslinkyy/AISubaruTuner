@@ -19,6 +19,12 @@ if __package__ in {None, ""}:
 
 # Import project modules with fallbacks for direct execution
 try:
+    from .tune_diff import compute_tune_diff, TuneDiffResult
+    from .datalog_parser import parse_datalog, detect_issues
+    from .ai_suggestions import generate_suggestions
+    from .safety_checks import run_safety_checks
+    from .tune_optimizer import optimize_tune
+
     from backend.tune_diff import compute_tune_diff, TuneDiffResult
     from backend.datalog_parser import parse_datalog, detect_issues
     from backend.ai_suggestions import generate_suggestions
@@ -37,6 +43,8 @@ except ImportError:
         logging.warning(f"Legacy modules not available: {e}")
         legacy_modules_available = False
 
+from .rom_integration import create_rom_integration_manager
+from . import enhanced_ai_suggestions
 try:
     from backend.rom_integration import create_rom_integration_manager
 except ImportError:
@@ -146,6 +154,7 @@ def verify_token(credentials: Optional[HTTPAuthorizationCredentials] = Depends(s
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
+
 def is_admin(user: dict = Depends(verify_token)):
     return user.get("role") == "admin"
 
@@ -177,8 +186,6 @@ def validate_file_type(filename: str, allowed_extensions: List[str]):
         raise HTTPException(
             status_code=400, detail=f"Invalid file type. Allowed: {allowed_extensions}"
         )
-
-
 def detect_platform(
     datalog_path: str, tune_path: str = None, definition_path: str = None
 ) -> str:
@@ -351,6 +358,9 @@ async def analyze_package(
                 )
                 datalog_df = parse_datalog(datalog_path, platform)
                 datalog_records = datalog_df.to_dict(orient="records")
+                enhanced_results.setdefault("datalog_analysis", {}).setdefault(
+                    "datalog", {}
+                )["data"] = datalog_records
 
                 da_summary = {
                     "total_rows": len(datalog_df),
@@ -432,6 +442,7 @@ async def analyze_package(
                 ai_suggestions_list = (
                     enhanced_ai_suggestions.generate_enhanced_ai_suggestions(
                         {
+                            "datalog": enhanced_results.get("datalog_analysis", {}),
                             "datalog": enhanced_results.get("datalog_analysis", {}).get(
                                 "datalog", {}
                             ),
