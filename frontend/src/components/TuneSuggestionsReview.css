@@ -1,0 +1,37 @@
+.tune-suggestions-review {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.analysis-summary {
+    margin-bottom: 1.5rem;
+}
+
+.summary-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+}
+
+.summary-item {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.analysis-error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.debug-section {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+}

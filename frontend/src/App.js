@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './App.css';
 import FileUpload from './components/FileUpload';
 import AnalysisViewer from './components/AnalysisViewer';
-import SuggestionsPanel from './components/SuggestionsPanel';
+import TuneSuggestionsReview from './components/TuneSuggestionsReview';
 import TuneDiffViewer from './components/TuneDiffViewer';
 import TuneInfoPanel from './components/TuneInfoPanel';
 import SessionContextPanel from './components/SessionContextPanel';
@@ -153,8 +153,6 @@ function App() {
 
             case 'suggestions':
                 const suggestions = getSuggestions();
-                console.log('Suggestions found:', suggestions.length); // Debug log
-
                 return (
                     <div>
                         <SessionContextPanel
@@ -167,8 +165,8 @@ function App() {
                             tuneFile={analysisData?.file_info?.tune}
                         />
                         <AnalysisViewer data={analysisData} />
-                        <SuggestionsPanel
-                            suggestions={suggestions}
+                        <TuneSuggestionsReview
+                            analysis={analysisData}
                             onReview={handleSuggestionsReview}
                         />
 
