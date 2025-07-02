@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './TuneDiffViewer.css';
 import CarberryTableDiff from './CarberryTableDiff';
 import AnalysisReport from './AnalysisReport';
@@ -9,11 +9,7 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        fetchDiffData();
-    }, [sessionId, selectedChanges]);
-
-    const fetchDiffData = async () => {
+    const fetchDiffData = useCallback(async () => {
         try {
             setLoading(true);
 
@@ -58,7 +54,11 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [sessionId, selectedChanges]);
+
+    useEffect(() => {
+        fetchDiffData();
+    }, [fetchDiffData]);
 
     const getChangeTypeIcon = (changeType) => {
         switch (changeType) {
