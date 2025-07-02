@@ -42,6 +42,20 @@ Set the `JWT_SECRET` environment variable to the shared secret used for verifyin
 JWT bearer tokens. During development you can bypass authentication entirely by
 setting `DISABLE_JWT_AUTH=1` when launching the server.
 
+Example (Linux/macOS shell):
+
+```bash
+export DISABLE_JWT_AUTH=1
+uvicorn backend.main:app --reload
+```
+
+Example (Windows PowerShell):
+
+```powershell
+$Env:DISABLE_JWT_AUTH=1
+uvicorn backend.main:app --reload
+```
+
 ### React app
 
 From the `frontend` folder execute:
