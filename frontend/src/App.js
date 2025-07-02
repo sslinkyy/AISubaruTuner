@@ -63,9 +63,9 @@ function App() {
         setCurrentStep('diff');
     };
 
-    const handleDiffApproval = () => {
+    const handleDiffApproval = async () => {
         setCurrentStep('apply');
-        applyChanges();
+        await applyChanges();
     };
 
     const applyChanges = async () => {
@@ -97,6 +97,7 @@ function App() {
             setComparisonTables(data.tables || []);
             setCurrentStep('comparison');
         } catch (err) {
+            setCurrentStep('diff');
             setError(err.message);
         } finally {
             setLoading(false);

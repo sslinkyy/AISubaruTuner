@@ -815,22 +815,33 @@ async def apply_changes(
                 or c.get("table_name") in selected_changes
             ]
 
+        # Group changes by table to build comparison data
         tables_modified = {}
         for change in tune_changes:
             t_name = change.get("table_name")
             tables_modified.setdefault(t_name, []).append(change)
 
         response_tables = []
+        priority_rank = {"critical": 3, "high": 2, "medium": 1, "low": 0}
         for t_name, changes in tables_modified.items():
             table_data = rom_manager.get_table_data(session, t_name)
             if not table_data:
                 logger.warning(f"Table data missing for {t_name}")
                 continue
             diff = rom_manager.generate_carberry_diff(table_data, changes)
+            # Determine highest priority among all changes for this table
+            highest = "low"
+            for c in changes:
+                p = (c.get("priority") or "low").lower()
+                if priority_rank.get(p, 0) > priority_rank.get(highest, 0):
+                    highest = p
+
             response_tables.append(
                 {
                     "id": t_name.replace(" ", "_").lower(),
                     "name": t_name,
+                    "priority": highest,
+                    "table_type": table_data.get("definition", {}).get("type"),
                     "metadata": {
                         "address": table_data.get("address"),
                         "size": table_data.get("size"),
