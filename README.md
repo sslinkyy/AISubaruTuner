@@ -25,7 +25,13 @@ npm install
 
 ### FastAPI server
 
-Run the backend API with Uvicorn:
+Before starting the server, install the backend requirements:
+
+```bash
+pip install -r backend/requirements.txt
+```
+
+Then run the API with Uvicorn:
 
 ```bash
 uvicorn backend.main:app --reload
@@ -34,6 +40,23 @@ uvicorn backend.main:app --reload
 This starts the API at <http://localhost:8000>.
 Set the `JWT_SECRET` environment variable to the shared secret used for verifying
 JWT bearer tokens.
+
+JWT bearer tokens. During development you can bypass authentication entirely by
+setting `DISABLE_JWT_AUTH=1` when launching the server.
+
+Example (Linux/macOS shell):
+
+```bash
+export DISABLE_JWT_AUTH=1
+uvicorn backend.main:app --reload
+```
+
+Example (Windows PowerShell):
+
+```powershell
+$Env:DISABLE_JWT_AUTH=1
+uvicorn backend.main:app --reload
+```
 
 ### React app
 
@@ -49,7 +72,6 @@ The development server will open at <http://localhost:3000> and proxy API reques
 
 ### Backend tests
 
-Install the backend dependencies and then run unit tests:
 Install the backend dependencies and run unit tests with:
 
 

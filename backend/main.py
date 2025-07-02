@@ -70,7 +70,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-security = HTTPBearer()
+# Allow optional bearer token when auth is disabled
+security = HTTPBearer(auto_error=False)
 rom_manager = create_rom_integration_manager()
 active_sessions = {}
 usage_stats = {
@@ -112,8 +113,27 @@ JWT_ALGORITHM = "HS256"
 JWT_SECRET = os.getenv("JWT_SECRET", "demo_secret")
 
 
+
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Validate JWT bearer token and return user information."""
+
+DISABLE_JWT_AUTH = os.getenv("DISABLE_JWT_AUTH", "0") == "1"
+logger.info("JWT auth disabled: %s", DISABLE_JWT_AUTH)
+
+
+def verify_token(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    """Validate JWT bearer token and return user information.
+
+    When `DISABLE_JWT_AUTH` environment variable is set to "1", this function
+    allows anonymous access and returns a default development user.
+    """
+    if DISABLE_JWT_AUTH:
+        return {"user_id": "dev_user", "role": "admin"}
+
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Missing authorization token")
+
+
     token = credentials.credentials
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
