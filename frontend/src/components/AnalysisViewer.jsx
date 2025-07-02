@@ -35,7 +35,6 @@ function AnalysisViewer({ data }) {
             datalogAnalysis.total_records ||
             datalogObj.total_rows ||
             datalogRecords.length ||
-
             data.total_rows ||
             0,
         // Number of parameters/columns logged
@@ -172,12 +171,37 @@ function AnalysisViewer({ data }) {
             return String(value);
         };
 
+        const getValueClass = (value) => {
+            if (value === undefined || value === null) return '';
+            const val = typeof value === 'object' && value.status ? value.status : value;
+            if (typeof val === 'number') {
+                if (val >= 0.8) return 'high';
+                if (val >= 0.5) return 'medium';
+                return 'low';
+            }
+            const txt = String(val).toLowerCase();
+            if (['high', 'good', 'complete', 'compatible'].includes(txt)) return 'high';
+            if (['medium', 'partial'].includes(txt)) return 'medium';
+            if (['low', 'incomplete', 'incompatible'].includes(txt)) return 'low';
+            return '';
+        };
+
         return (
             <div className="analysis-section">
                 <h3>Analysis Quality</h3>
                 <div className="metrics-grid">
                     <div className="metric-item">
                         <span className="metric-label">Analysis Confidence</span>
+                        <span className={`metric-value ${getValueClass(metrics.analysis_confidence)}`}>{formatMetricValue(metrics.analysis_confidence)}</span>
+                    </div>
+                    <div className="metric-item">
+                        <span className="metric-label">ROM Compatibility</span>
+                        <span className={`metric-value ${getValueClass(metrics.rom_compatibility)}`}>{formatMetricValue(metrics.rom_compatibility)}</span>
+                    </div>
+                    <div className="metric-item">
+                        <span className="metric-label">Data Completeness</span>
+                        <span className={`metric-value ${getValueClass(metrics.data_quality || metrics.data_completeness)}`}>{formatMetricValue(metrics.data_quality || metrics.data_completeness)}</span>
+
                         <span className="metric-value">{formatMetricValue(metrics.analysis_confidence)}</span>
                     </div>
                     <div className="metric-item">
@@ -187,11 +211,14 @@ function AnalysisViewer({ data }) {
                     <div className="metric-item">
                         <span className="metric-label">Data Completeness</span>
                         <span className="metric-value">{formatMetricValue(metrics.data_quality || metrics.data_completeness)}</span>
+
                     </div>
                     {metrics.recommendation_reliability && (
                         <div className="metric-item">
                             <span className="metric-label">Recommendation Reliability</span>
+                            <span className={`metric-value ${getValueClass(metrics.recommendation_reliability)}`}>{formatMetricValue(metrics.recommendation_reliability)}</span>
                             <span className="metric-value">{formatMetricValue(metrics.recommendation_reliability)}</span>
+
                         </div>
                     )}
                 </div>

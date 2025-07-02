@@ -432,7 +432,9 @@ async def analyze_package(
                 ai_suggestions_list = (
                     enhanced_ai_suggestions.generate_enhanced_ai_suggestions(
                         {
-                            "datalog": enhanced_results.get("datalog_analysis", {}),
+                            "datalog": enhanced_results.get("datalog_analysis", {}).get(
+                                "datalog", {}
+                            ),
                             "tune": enhanced_results.get("tune_changes", {}),
                             "platform": platform,
                             "issues": enhanced_results.get("datalog_analysis", {}).get(
