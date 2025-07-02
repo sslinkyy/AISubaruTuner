@@ -201,11 +201,24 @@ function AnalysisViewer({ data }) {
                     <div className="metric-item">
                         <span className="metric-label">Data Completeness</span>
                         <span className={`metric-value ${getValueClass(metrics.data_quality || metrics.data_completeness)}`}>{formatMetricValue(metrics.data_quality || metrics.data_completeness)}</span>
+
+                        <span className="metric-value">{formatMetricValue(metrics.analysis_confidence)}</span>
+                    </div>
+                    <div className="metric-item">
+                        <span className="metric-label">ROM Compatibility</span>
+                        <span className="metric-value">{formatMetricValue(metrics.rom_compatibility)}</span>
+                    </div>
+                    <div className="metric-item">
+                        <span className="metric-label">Data Completeness</span>
+                        <span className="metric-value">{formatMetricValue(metrics.data_quality || metrics.data_completeness)}</span>
+
                     </div>
                     {metrics.recommendation_reliability && (
                         <div className="metric-item">
                             <span className="metric-label">Recommendation Reliability</span>
                             <span className={`metric-value ${getValueClass(metrics.recommendation_reliability)}`}>{formatMetricValue(metrics.recommendation_reliability)}</span>
+                            <span className="metric-value">{formatMetricValue(metrics.recommendation_reliability)}</span>
+
                         </div>
                     )}
                 </div>
