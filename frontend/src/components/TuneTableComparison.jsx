@@ -4,7 +4,21 @@ import './TuneTableComparison.css';
 // Download helper for exporting table data as CSV
 function downloadCsv(data, name) {
   if (!data) return;
-  const csv = data.map(row => row.join(',')).join('\n');
+
+  let rows = [];
+
+  if (Array.isArray(data[0]) && Array.isArray(data[0][0])) {
+    // 3D table - flatten planes
+    data.forEach((plane, pIdx) => {
+      rows.push([`Layer ${pIdx}`]);
+      plane.forEach((r) => rows.push(r));
+      rows.push([]); // blank line between planes
+    });
+  } else {
+    rows = data;
+  }
+
+  const csv = rows.map((row) => row.join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -20,11 +34,26 @@ function renderTable(table, compare = null) {
   const { axes = {}, data } = table;
   const xAxis = axes.x || [];
   const yAxis = axes.y || [];
+  const zAxis = axes.z || [];
 
   if (!data || data.length === 0) return null;
 
-  // Determine table layout (1D or 2D)
-  const is1D = yAxis.length === 0 || data.length === 1;
+  // Detect table dimensionality
+  const is3D = Array.isArray(data[0]) && Array.isArray(data[0][0]);
+  const is1D = !Array.isArray(data[0]) || (!is3D && (yAxis.length === 0 || data.length === 1));
+
+  if (is3D) {
+    return (
+      <div className="table-3d">
+        {data.map((plane, idx) => (
+          <div key={idx} className="table-plane">
+            <div className="plane-label">{zAxis[idx] ?? `Layer ${idx}`}</div>
+            {renderTable({ axes: { x: xAxis, y: yAxis }, data: plane }, compare ? compare[idx] : null)}
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   if (is1D) {
     return (
