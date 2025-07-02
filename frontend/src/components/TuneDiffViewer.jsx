@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './TuneDiffViewer.css';
 import CarberryTableDiff from './CarberryTableDiff';
+import AnalysisReport from './AnalysisReport';
 
 function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
     const [diffData, setDiffData] = useState(null);
@@ -36,12 +37,19 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
                 const detailed = data.detailed_changes || data.changes || [];
                 const summary = {
                     totalChanges: data.total_changes || detailed.length,
-                    highImpactChanges: detailed.filter(c => (c.priority || '').toLowerCase() === 'high' || (c.priority || '').toLowerCase() === 'critical').length,
+                    highImpactChanges: detailed.filter(
+                        (c) => (c.priority || '').toLowerCase() === 'high' || (c.priority || '').toLowerCase() === 'critical'
+                    ).length,
                     estimatedPowerChange: data.estimated_power_gain || 'N/A',
                     safetyRating: data.safety_rating || 'Unknown'
                 };
 
-                setDiffData({ changes: detailed, summary });
+                setDiffData({
+                    changes: detailed,
+                    summary,
+                    analysisMetadata: data.analysis_metadata,
+                    romCompatibility: data.rom_compatibility
+                });
             } else {
                 setDiffData({ changes: [], summary: {} });
             }
@@ -188,6 +196,13 @@ function TuneDiffViewer({ sessionId, selectedChanges, onApproval }) {
                     <h3>Table Preview</h3>
                     <CarberryTableDiff diff={tableDiff} />
                 </div>
+            )}
+
+            {diffData.analysisMetadata && (
+                <AnalysisReport
+                    metadata={diffData.analysisMetadata}
+                    romCompatibility={diffData.romCompatibility}
+                />
             )}
 
             <div className="diff-actions">
