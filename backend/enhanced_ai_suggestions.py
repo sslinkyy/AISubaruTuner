@@ -53,8 +53,15 @@ class EnhancedTuningAI:
 
         return True, ""
 
-    def generate_comprehensive_suggestions(self, analysis_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Generate comprehensive tuning suggestions with specific RPM/load context"""
+    def generate_comprehensive_suggestions(
+        self, analysis_data: Dict[str, Any], interval_size: int = 1000
+    ) -> List[Dict[str, Any]]:
+        """Generate comprehensive tuning suggestions with specific RPM/load context
+        and aggregate them by RPM interval.
+
+        ``interval_size`` specifies the step for grouping suggestions. It can be
+        either ``500`` or ``1000`` RPM. Any value outside of these choices will
+        default to ``1000`` RPM."""
 
         valid, message = self._validate_analysis_data(analysis_data)
         if not valid:
@@ -73,6 +80,10 @@ class EnhancedTuningAI:
         datalog = analysis_data.get("datalog", {})
         platform = analysis_data.get("platform", "")
         issues = analysis_data.get("issues", [])
+
+        # normalize interval size
+        if interval_size not in (500, 1000):
+            interval_size = 1000
 
         # Get the actual datalog data
         datalog_data = datalog.get("data", [])
@@ -105,11 +116,17 @@ class EnhancedTuningAI:
         elif platform == "Hondata":
             suggestions.extend(self._generate_hondata_advanced_suggestions(df))
 
+        # Trend-based analysis across RPM intervals
+        suggestions.extend(self._analyze_trend_patterns(df, interval_size))
+
         # Sort by priority and return
         priority_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}
         suggestions.sort(key=lambda x: priority_order.get(x.get("priority", "medium"), 2), reverse=True)
 
-        return suggestions[:20]  # Limit to top 20 suggestions
+        # Break suggestions into RPM intervals for clarity
+        grouped = self._group_suggestions_by_interval(suggestions, interval_size)
+
+        return grouped[:20]
 
     def _analyze_fuel_system(self, df: pd.DataFrame, issues: List[Dict]) -> List[Dict[str, Any]]:
         """Comprehensive fuel system analysis with specific recommendations"""
@@ -955,6 +972,103 @@ class EnhancedTuningAI:
 
         return {"optimization_needed": False}
 
+    def _analyze_trend_patterns(self, df: pd.DataFrame, interval_size: int) -> List[Dict[str, Any]]:
+        """Analyze trends across RPM intervals using simple heuristics."""
+        results: List[Dict[str, Any]] = []
+
+        rpm_col = "Engine Speed (rpm)"
+        if rpm_col not in df.columns:
+            return results
+
+        rpm_min = int(df[rpm_col].min())
+        rpm_max = int(df[rpm_col].max()) + interval_size
+        intervals = list(range(rpm_min - rpm_min % interval_size, rpm_max, interval_size))
+
+        prev_metrics = None
+        for start in intervals[:-1]:
+            end = start + interval_size
+            seg = df[(df[rpm_col] >= start) & (df[rpm_col] < end)]
+            if len(seg) < 5:
+                prev_metrics = None if prev_metrics is None else prev_metrics
+                continue
+
+            metrics = {
+                "avg_afr": seg["A/F Sensor #1 (AFR)"].mean() if "A/F Sensor #1 (AFR)" in seg.columns else None,
+                "knock_events": seg["Knock Sum"][seg["Knock Sum"] > 0].count() if "Knock Sum" in seg.columns else 0,
+                "avg_map": seg["Manifold Absolute Pressure (psi)"].mean() if "Manifold Absolute Pressure (psi)" in seg.columns else None,
+                "avg_timing": seg["Ignition Total Timing (degrees)"].mean() if "Ignition Total Timing (degrees)" in seg.columns else None,
+                "data_points": len(seg),
+            }
+
+            if prev_metrics:
+                if metrics["avg_afr"] and prev_metrics.get("avg_afr"):
+                    if metrics["avg_afr"] - prev_metrics["avg_afr"] > 0.3 and metrics["avg_afr"] > 14.7:
+                        results.append({
+                            "rpm_range": f"{start}-{end}",
+                            "load_range": f"{(metrics['avg_map'] or 0)-14.7:+.1f} psi avg" if metrics["avg_map"] else "N/A",
+                            "suggestion": "Increase fuel",
+                            "reason": "AFR trending lean compared to previous interval",
+                            "confidence": round(min(1.0, metrics["data_points"] / 20), 2),
+                            "data_points": metrics["data_points"],
+                        })
+
+                if metrics["knock_events"] > prev_metrics.get("knock_events", 0) and metrics["knock_events"] > 0:
+                    results.append({
+                        "rpm_range": f"{start}-{end}",
+                        "load_range": f"{(metrics['avg_map'] or 0)-14.7:+.1f} psi avg" if metrics["avg_map"] else "N/A",
+                        "suggestion": "Reduce ignition timing",
+                        "reason": f"Knock count increased to {metrics['knock_events']} in this interval",
+                        "confidence": round(min(1.0, metrics["data_points"] / 20), 2),
+                        "data_points": metrics["data_points"],
+                    })
+
+                if metrics["avg_map"] and prev_metrics.get("avg_map"):
+                    if metrics["avg_map"] - prev_metrics["avg_map"] > 3:
+                        results.append({
+                            "rpm_range": f"{start}-{end}",
+                            "load_range": f"{(metrics['avg_map'] or 0)-14.7:+.1f} psi avg",
+                            "suggestion": "Reduce boost or wastegate duty",
+                            "reason": "MAP rising quickly compared to previous interval",
+                            "confidence": round(min(1.0, metrics["data_points"] / 20), 2),
+                            "data_points": metrics["data_points"],
+                        })
+
+            prev_metrics = metrics
+
+        return results
+
+    def _group_suggestions_by_interval(self, suggestions: List[Dict[str, Any]], interval_size: int) -> List[Dict[str, Any]]:
+        """Break suggestions into uniform RPM intervals for clear presentation."""
+        grouped: List[Dict[str, Any]] = []
+
+        for s in suggestions:
+            rpm_range = s.get("rpm_range")
+            if not rpm_range:
+                grouped.append(s)
+                continue
+            try:
+                start_str, end_str = rpm_range.split("-")
+                start = int(float(start_str))
+                end = int(float(end_str))
+            except ValueError:
+                grouped.append(s)
+                continue
+
+            cur = (start // interval_size) * interval_size
+            while cur < end:
+                next_end = cur + interval_size
+                if next_end <= start:
+                    cur = next_end
+                    continue
+                sub_start = max(cur, start)
+                sub_end = min(next_end, end)
+                entry = s.copy()
+                entry["rpm_range"] = f"{sub_start}-{sub_end}"
+                grouped.append(entry)
+                cur = next_end
+
+        return grouped
+
     def _generate_no_data_suggestions(self) -> List[Dict[str, Any]]:
         """Generate suggestions when no datalog data is available"""
         return [{
@@ -983,6 +1097,11 @@ if __name__ == "__main__":
     ai_engine = EnhancedTuningAI()
     # suggestions = ai_engine.generate_comprehensive_suggestions(analysis_data)
 
-def generate_enhanced_ai_suggestions(analysis_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+def generate_enhanced_ai_suggestions(
+    analysis_data: Dict[str, Any], interval_size: int = 1000
+) -> List[Dict[str, Any]]:
+    """Convenience wrapper for :class:`EnhancedTuningAI`.
+
+    ``interval_size`` controls the RPM grouping size (500 or 1000 RPM)."""
     ai = EnhancedTuningAI()
-    return ai.generate_comprehensive_suggestions(analysis_data)
+    return ai.generate_comprehensive_suggestions(analysis_data, interval_size)
