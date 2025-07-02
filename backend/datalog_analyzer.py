@@ -1,49 +1,64 @@
 import pandas as pd
 import numpy as np
 import logging
+from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional
+import os
 
 logger = logging.getLogger(__name__)
 
-class DatalogAnalyzer:
-    """Advanced datalog analysis with real tuning insights"""
+@dataclass
+class AnalyzerConfig:
+    """Configuration for :class:`DatalogAnalyzer`. Thresholds can be tuned by users."""
 
-    def __init__(self):
-        self.analysis_rules = {
+    analysis_rules: Dict[str, Dict[str, Any]] = field(
+        default_factory=lambda: {
             "lean_condition": {
                 "column": "A/F Sensor #1 (AFR)",
                 "threshold": 15.0,
                 "severity": "critical",
-                "description": "Lean air-fuel ratio detected"
+                "description": "Lean air-fuel ratio detected",
             },
             "rich_condition": {
-                "column": "A/F Sensor #1 (AFR)", 
+                "column": "A/F Sensor #1 (AFR)",
                 "threshold": 12.0,
                 "severity": "medium",
-                "description": "Rich air-fuel ratio detected"
+                "description": "Rich air-fuel ratio detected",
             },
             "high_af_correction": {
                 "column": "A/F Correction #1 (%)",
                 "threshold": 15.0,
                 "severity": "high",
-                "description": "High A/F correction indicates fueling issues"
+                "description": "High A/F correction indicates fueling issues",
             },
             "knock_detected": {
                 "column": "Knock Sum",
                 "threshold": 1.0,
-                "severity": "critical", 
-                "description": "Engine knock detected"
+                "severity": "critical",
+                "description": "Engine knock detected",
             },
             "high_boost": {
                 "column": "Manifold Absolute Pressure (psi)",
                 "threshold": 25.0,
                 "severity": "medium",
-                "description": "High boost pressure detected"
-            }
+                "description": "High boost pressure detected",
+            },
         }
+    )
+
+
+class DatalogAnalyzer:
+    """Advanced datalog analysis with real tuning insights"""
+
+    def __init__(self, config: Optional[AnalyzerConfig] = None):
+        self.config = config or AnalyzerConfig()
+        self.analysis_rules = self.config.analysis_rules
 
     def analyze_datalog(self, datalog_path: str) -> Dict[str, Any]:
         """Comprehensive datalog analysis"""
+        if not os.path.isfile(datalog_path):
+            raise FileNotFoundError(f"Datalog file not found: {datalog_path}")
+
         try:
             df = pd.read_csv(datalog_path)
             logger.info(f"Analyzing datalog: {len(df)} rows, {len(df.columns)} columns")
@@ -85,8 +100,8 @@ class DatalogAnalyzer:
             }
 
         except Exception as e:
-            logger.error(f"Error analyzing datalog: {e}")
-            raise
+            logger.error("Error analyzing datalog: %s", e)
+            raise ValueError(f"Failed to analyze datalog: {e}") from e
 
     def _calculate_duration(self, df: pd.DataFrame) -> float:
         """Calculate log duration in seconds"""

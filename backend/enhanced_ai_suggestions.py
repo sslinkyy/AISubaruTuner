@@ -1,15 +1,18 @@
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple, Optional
+from dataclasses import dataclass, field
 import logging
 import pandas as pd
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
-class EnhancedTuningAI:
-    """Enhanced AI tuning suggestions with comprehensive analysis"""
+@dataclass
+class AIConfig:
+    """Configuration for :class:`EnhancedTuningAI`. Allows expert users to
+    override default thresholds without modifying the code."""
 
-    def __init__(self):
-        self.tuning_parameters = {
+    tuning_parameters: Dict[str, Dict[str, float]] = field(
+        default_factory=lambda: {
             "fuel": {
                 "safe_change_limit": 15.0,
                 "critical_afr_lean": 15.5,
@@ -29,13 +32,45 @@ class EnhancedTuningAI:
                 "wastegate_duty_max": 85.0
             }
         }
+    )
+
+
+class EnhancedTuningAI:
+    """Enhanced AI tuning suggestions with comprehensive analysis."""
+
+    def __init__(self, config: Optional[AIConfig] = None):
+        self.config = config or AIConfig()
+        self.tuning_parameters = self.config.tuning_parameters
+
+    def _validate_analysis_data(self, analysis_data: Dict[str, Any]) -> Tuple[bool, str]:
+        """Simple validation for incoming analysis data."""
+        if not isinstance(analysis_data, dict):
+            return False, "Analysis data must be a dictionary"
+
+        datalog = analysis_data.get("datalog")
+        if not datalog or not isinstance(datalog.get("data", []), list):
+            return False, "Datalog information missing or malformed"
+
+        return True, ""
 
     def generate_comprehensive_suggestions(self, analysis_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Generate comprehensive tuning suggestions with specific RPM/load context"""
 
+        valid, message = self._validate_analysis_data(analysis_data)
+        if not valid:
+            logger.warning("Invalid analysis data provided: %s", message)
+            return [
+                {
+                    "id": "invalid_input",
+                    "type": "Input Error",
+                    "priority": "high",
+                    "description": message,
+                    "specific_action": "Verify datalog and tune information",
+                }
+            ]
+
         suggestions = []
         datalog = analysis_data.get("datalog", {})
-        tune = analysis_data.get("tune", {})
         platform = analysis_data.get("platform", "")
         issues = analysis_data.get("issues", [])
 
