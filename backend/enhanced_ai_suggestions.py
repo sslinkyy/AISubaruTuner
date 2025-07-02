@@ -138,6 +138,7 @@ class EnhancedTuningAI:
             suggestions, interval_size, load_interval_size, df
         )
 
+
         return grouped[:20]
 
     def _analyze_fuel_system(self, df: pd.DataFrame, issues: List[Dict]) -> List[Dict[str, Any]]:
@@ -1079,6 +1080,7 @@ class EnhancedTuningAI:
                 "avg_load": seg[load_col].mean() if load_col and load_col in seg.columns else None,
                 "load_min": seg[load_col].min() if load_col and load_col in seg.columns else None,
                 "load_max": seg[load_col].max() if load_col and load_col in seg.columns else None,
+
                 "avg_timing": seg["Ignition Total Timing (degrees)"].mean() if "Ignition Total Timing (degrees)" in seg.columns else None,
                 "data_points": len(seg),
             }
@@ -1269,3 +1271,4 @@ def generate_enhanced_ai_suggestions(
     return ai.generate_comprehensive_suggestions(
         analysis_data, interval_size, load_interval_size
     )
+
