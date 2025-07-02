@@ -36,6 +36,15 @@ class AIConfig:
         }
     )
 
+    trend_thresholds: Dict[str, float] = field(
+        default_factory=lambda: {
+            "min_interval_points": 5,
+            "lean_delta": 0.3,
+            "lean_afr_threshold": 14.7,
+            "load_rise_delta": 3.0,
+        }
+    )
+
 
 class EnhancedTuningAI:
     """Enhanced AI tuning suggestions with comprehensive analysis."""
@@ -43,6 +52,7 @@ class EnhancedTuningAI:
     def __init__(self, config: Optional[AIConfig] = None):
         self.config = config or AIConfig()
         self.tuning_parameters = self.config.tuning_parameters
+        self.trend_thresholds = self.config.trend_thresholds
 
     def _validate_analysis_data(self, analysis_data: Dict[str, Any]) -> Tuple[bool, str]:
         """Simple validation for incoming analysis data."""
@@ -137,7 +147,6 @@ class EnhancedTuningAI:
         grouped = self._group_suggestions_by_intervals(
             suggestions, interval_size, load_interval_size, df
         )
-
 
         return grouped[:20]
 
@@ -971,6 +980,8 @@ class EnhancedTuningAI:
                 hot_avg = hot.mean()
                 if abs(cold_avg - hot_avg) > 5:
                     action = "increase" if cold_avg > hot_avg else "decrease"
+                    confidence = round(min(1.0, abs(cold_avg - hot_avg) / 10), 2)
+
                     suggestions.append({
                         "id": "iat_compensation",
                         "type": "Temperature Compensation",
@@ -979,7 +990,7 @@ class EnhancedTuningAI:
                         "specific_action": f"{action.capitalize()} IAT fuel compensation",
                         "rpm_range": "various",
                         "load_range": "various",
-                        "confidence": "medium",
+                        "confidence": confidence,
                         "data_points": int(len(cold) + len(hot)),
                     })
 
@@ -1066,12 +1077,17 @@ class EnhancedTuningAI:
         rpm_max = int(df[rpm_col].max()) + interval_size
         intervals = list(range(rpm_min - rpm_min % interval_size, rpm_max, interval_size))
 
+        th = self.trend_thresholds
+        min_pts = int(th.get("min_interval_points", 5))
+        lean_delta = th.get("lean_delta", 0.3)
+        lean_afr = th.get("lean_afr_threshold", 14.7)
+        load_delta = th.get("load_rise_delta", 3.0)
+
         prev_metrics = None
         for start in intervals[:-1]:
             end = start + interval_size
             seg = df[(df[rpm_col] >= start) & (df[rpm_col] < end)]
-            if len(seg) < 5:
-                prev_metrics = None if prev_metrics is None else prev_metrics
+            if len(seg) < min_pts:
                 continue
 
             metrics = {
@@ -1080,18 +1096,15 @@ class EnhancedTuningAI:
                 "avg_load": seg[load_col].mean() if load_col and load_col in seg.columns else None,
                 "load_min": seg[load_col].min() if load_col and load_col in seg.columns else None,
                 "load_max": seg[load_col].max() if load_col and load_col in seg.columns else None,
-
                 "avg_timing": seg["Ignition Total Timing (degrees)"].mean() if "Ignition Total Timing (degrees)" in seg.columns else None,
                 "data_points": len(seg),
             }
 
             if prev_metrics:
                 if metrics["avg_afr"] and prev_metrics.get("avg_afr"):
-                    if metrics["avg_afr"] - prev_metrics["avg_afr"] > 0.3 and metrics["avg_afr"] > 14.7:
-                        load_desc = (
-                            f"{metrics['load_min']:.1f}-{metrics['load_max']:.1f} {load_unit}"
-                            if metrics["load_min"] is not None
-                            else "N/A"
+                    if metrics["avg_afr"] - prev_metrics["avg_afr"] > lean_delta and metrics["avg_afr"] > lean_afr:
+                        load_desc = self._format_load_range(
+                            metrics["load_min"], metrics["load_max"], load_unit
                         )
                         results.append({
                             "rpm_range": f"{start}-{end}",
@@ -1103,10 +1116,8 @@ class EnhancedTuningAI:
                         })
 
                 if metrics["knock_events"] > prev_metrics.get("knock_events", 0) and metrics["knock_events"] > 0:
-                    load_desc = (
-                        f"{metrics['load_min']:.1f}-{metrics['load_max']:.1f} {load_unit}"
-                        if metrics["load_min"] is not None
-                        else "N/A"
+                    load_desc = self._format_load_range(
+                        metrics["load_min"], metrics["load_max"], load_unit
                     )
                     results.append({
                         "rpm_range": f"{start}-{end}",
@@ -1118,11 +1129,9 @@ class EnhancedTuningAI:
                     })
 
                 if metrics["avg_load"] and prev_metrics.get("avg_load"):
-                    if metrics["avg_load"] - prev_metrics["avg_load"] > 3:
-                        load_desc = (
-                            f"{metrics['load_min']:.1f}-{metrics['load_max']:.1f} {load_unit}"
-                            if metrics["load_min"] is not None
-                            else "N/A"
+                    if metrics["avg_load"] - prev_metrics["avg_load"] > load_delta:
+                        load_desc = self._format_load_range(
+                            metrics["load_min"], metrics["load_max"], load_unit
                         )
                         results.append({
                             "rpm_range": f"{start}-{end}",
@@ -1170,10 +1179,8 @@ class EnhancedTuningAI:
                     if r_start is not None:
                         entry["rpm_range"] = f"{int(r_start)}-{int(r_end)}"
                     if l_start is not None:
-                        entry["load_range"] = (
-                            f"{l_start:.1f}-{l_end:.1f} {load_unit}"
-                            if load_unit
-                            else f"{l_start:.1f}-{l_end:.1f}"
+                        entry["load_range"] = self._format_load_range(
+                            l_start, l_end, load_unit
                         )
                     grouped.append(entry)
 
@@ -1194,6 +1201,16 @@ class EnhancedTuningAI:
 
     @staticmethod
     def _split_range(start: Optional[float], end: Optional[float], step: int) -> List[Tuple[Optional[float], Optional[float]]]:
+        """Splits a numeric range into chunks of a given step size.
+
+        Args:
+            start: The start of the range.
+            end: The end of the range.
+            step: The size of each chunk.
+
+        Returns:
+            A list of ``(start, end)`` tuples representing the chunks.
+        """
         if start is None or end is None:
             return [(start, end)]
         if start > end:
@@ -1208,6 +1225,14 @@ class EnhancedTuningAI:
                 chunks.append((sub_start, sub_end))
             cur = next_end
         return chunks if chunks else [(start, end)]
+
+    @staticmethod
+    def _format_load_range(load_min: Optional[float], load_max: Optional[float], unit: str) -> str:
+        """Return a standardized load range string."""
+        if load_min is None or load_max is None:
+            return "N/A"
+        value = f"{load_min:.1f}-{load_max:.1f}"
+        return f"{value} {unit}" if unit else value
 
     @staticmethod
     def _determine_load_info(df: pd.DataFrame) -> Tuple[Optional[str], str]:
@@ -1271,4 +1296,3 @@ def generate_enhanced_ai_suggestions(
     return ai.generate_comprehensive_suggestions(
         analysis_data, interval_size, load_interval_size
     )
-
