@@ -777,15 +777,24 @@ async def apply_changes(
     session = active_sessions.get(session_id)
     if not session:
         logger.warning(f"Apply changes failed - session {session_id} not found")
-        raise HTTPException(
+        return JSONResponse(
             status_code=404,
-            detail="Session not found. Upload files and run analysis first.",
+            content={
+                "status": "error",
+                "message": "Session not found. Upload files and run analysis first.",
+                "debug": {"session_id": session_id},
+            },
         )
 
     if "analysis" not in session:
-        raise HTTPException(
+        logger.warning(f"Apply changes failed - analysis missing for {session_id}")
+        return JSONResponse(
             status_code=400,
-            detail="Analysis not completed for this session",
+            content={
+                "status": "error",
+                "message": "Analysis not completed for this session",
+                "debug": {"session_id": session_id},
+            },
         )
 
     try:
@@ -797,7 +806,7 @@ async def apply_changes(
             datalog_path, tune_path, definition_path
         )
 
-        tune_changes = results["detailed_data"]["tune_change_details"]
+        tune_changes = results["detailed_data"].get("tune_change_details", [])
         if selected_changes:
             tune_changes = [
                 c
@@ -822,6 +831,12 @@ async def apply_changes(
                 {
                     "id": t_name.replace(" ", "_").lower(),
                     "name": t_name,
+                    "metadata": {
+                        "address": table_data.get("address"),
+                        "size": table_data.get("size"),
+                        "units": table_data.get("scaling", {}).get("units"),
+                        "storage_type": table_data.get("storage_type"),
+                    },
                     "axes": {
                         "x": diff.get("rpm_axis", []),
                         "y": diff.get("load_axis", []),
@@ -835,8 +850,6 @@ async def apply_changes(
     except Exception as e:
         logger.error(f"Failed to apply changes for session {session_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to apply tune changes")
-
-
 @app.get("/api/system/status")
 async def get_system_status(user: dict = Depends(verify_token)):
     return {

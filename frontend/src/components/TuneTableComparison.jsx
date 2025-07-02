@@ -1,6 +1,7 @@
 import React from 'react';
 import './TuneTableComparison.css';
 
+// Download helper for exporting table data as CSV
 function downloadCsv(data, name) {
   if (!data) return;
   const csv = data.map(row => row.join(',')).join('\n');
@@ -15,7 +16,7 @@ function downloadCsv(data, name) {
   window.URL.revokeObjectURL(url);
 }
 
-function renderTable(table) {
+function renderTable(table, compare = null) {
   const { axes = {}, data } = table;
   const xAxis = axes.x || [];
   const yAxis = axes.y || [];
@@ -36,9 +37,12 @@ function renderTable(table) {
         {xAxis.map((x, rIdx) => (
           <tr key={rIdx}>
             <th>{x}</th>
-            {data[rIdx].map((val, cIdx) => (
-              <td key={cIdx}>{val}</td>
-            ))}
+            {data[rIdx].map((val, cIdx) => {
+              const changed = compare && compare[rIdx] && compare[rIdx][cIdx] !== val;
+              return (
+                <td key={cIdx} className={changed ? 'changed-cell' : ''}>{val}</td>
+              );
+            })}
           </tr>
         ))}
       </tbody>
@@ -67,7 +71,7 @@ export default function TuneTableComparison({ tables = [], onContinue }) {
                 <span>Suggested</span>
                 <button onClick={() => downloadCsv(tbl.modified, `${tbl.id}_modified`)}>Download</button>
               </div>
-              {renderTable({ axes: tbl.axes, data: tbl.modified })}
+              {renderTable({ axes: tbl.axes, data: tbl.modified }, tbl.original)}
             </div>
           </div>
         </div>

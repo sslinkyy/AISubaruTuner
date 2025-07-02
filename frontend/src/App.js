@@ -85,7 +85,12 @@ function App() {
             });
 
             if (!response.ok) {
-                throw new Error(`Apply changes failed: ${response.statusText}`);
+                let errDetail = response.statusText;
+                try {
+                    const msg = await response.json();
+                    errDetail = msg.detail || msg.message || errDetail;
+                } catch (_) { }
+                throw new Error(`Apply changes failed: ${errDetail}`);
             }
 
             const data = await response.json();
@@ -97,7 +102,6 @@ function App() {
             setLoading(false);
         }
     };
-
     const handleDownloadComplete = () => {
         setCurrentStep('feedback');
     };
