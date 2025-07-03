@@ -5,6 +5,9 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional
 import os
 
+# Atmospheric pressure in PSI used to convert MAP readings to relative load/boost
+ATMOSPHERIC_PRESSURE_PSI = 14.7
+
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -89,6 +92,9 @@ class DatalogAnalyzer:
             # Data quality assessment
             data_quality = self._assess_data_quality(df)
 
+            # Check for required driving scenarios
+            required_scenarios = self._check_required_scenarios(df)
+
             return {
                 "summary": summary,
                 "issues": issues,
@@ -96,7 +102,8 @@ class DatalogAnalyzer:
                 "safety": safety,
                 "suggestions": suggestions,
                 "data_quality": data_quality,
-                "load_analysis": self._analyze_load_points(df)
+                "load_analysis": self._analyze_load_points(df),
+                "required_scenarios": required_scenarios,
             }
 
         except Exception as e:
@@ -125,7 +132,7 @@ class DatalogAnalyzer:
         load_col = "Manifold Absolute Pressure (psi)"
         if load_col in df.columns:
             # Convert to relative load (boost)
-            boost_data = df[load_col] - 14.7
+            boost_data = df[load_col] - ATMOSPHERIC_PRESSURE_PSI
             return {
                 "min": round(boost_data.min(), 2),
                 "max": round(boost_data.max(), 2),
@@ -211,7 +218,7 @@ class DatalogAnalyzer:
                     })
 
             elif issue_type == "high_boost":
-                boost_data = df[column] - 14.7  # Convert to boost
+                boost_data = df[column] - ATMOSPHERIC_PRESSURE_PSI  # Convert to boost
                 high_boost_count = len(boost_data[boost_data > rule["threshold"]])
                 if high_boost_count > 0:
                     max_boost = boost_data.max()
@@ -243,7 +250,7 @@ class DatalogAnalyzer:
             })
 
         if "Manifold Absolute Pressure (psi)" in df_subset.columns:
-            load_data = df_subset["Manifold Absolute Pressure (psi)"] - 14.7
+            load_data = df_subset["Manifold Absolute Pressure (psi)"] - ATMOSPHERIC_PRESSURE_PSI
             areas.append({
                 "parameter": "Boost",
                 "min": round(load_data.min(), 2),
@@ -266,7 +273,7 @@ class DatalogAnalyzer:
 
         # Boost analysis
         if "Manifold Absolute Pressure (psi)" in df.columns:
-            boost_data = df["Manifold Absolute Pressure (psi)"] - 14.7
+            boost_data = df["Manifold Absolute Pressure (psi)"] - ATMOSPHERIC_PRESSURE_PSI
             performance["max_boost"] = round(boost_data.max(), 1)
             performance["avg_boost"] = round(boost_data.mean(), 1)
 
@@ -344,7 +351,7 @@ class DatalogAnalyzer:
 
         # ---- Boost pressure ----
         if "Manifold Absolute Pressure (psi)" in df.columns:
-            boost_data = df["Manifold Absolute Pressure (psi)"] - 14.7
+            boost_data = df["Manifold Absolute Pressure (psi)"] - ATMOSPHERIC_PRESSURE_PSI
             max_boost = float(boost_data.max())
             if max_boost > 20:
                 safety["warnings"].append({
@@ -448,7 +455,7 @@ class DatalogAnalyzer:
             return {}
 
         rpm_data = df["Engine Speed (rpm)"]
-        load_data = df["Manifold Absolute Pressure (psi)"] - 14.7  # Convert to boost
+        load_data = df["Manifold Absolute Pressure (psi)"] - ATMOSPHERIC_PRESSURE_PSI  # Convert to boost
 
         # Define load point bins
         rpm_bins = [0, 1500, 2500, 3500, 4500, 5500, 7000]
@@ -509,3 +516,30 @@ class DatalogAnalyzer:
                 missing.append(param)
 
         return missing
+
+    def _check_required_scenarios(self, df: pd.DataFrame) -> Dict[str, bool]:
+        """Check datalog for presence of key driving scenarios"""
+        scenarios = {"wot": False, "idle": False, "cruise": False}
+
+        # Identify useful columns
+        rpm_col = next((c for c in df.columns if "engine speed" in c.lower()), None)
+        throttle_col = next((c for c in df.columns if "throttle" in c.lower() and "%" in c.lower()), None)
+        map_col = next((c for c in df.columns if "manifold absolute pressure" in c.lower()), None)
+
+        if rpm_col is None:
+            return scenarios
+
+        rpm = pd.to_numeric(df[rpm_col], errors="coerce")
+
+        if throttle_col is not None:
+            thr = pd.to_numeric(df[throttle_col], errors="coerce")
+            scenarios["wot"] = ((thr >= 80) & (rpm > 3000)).any()
+            scenarios["idle"] = ((rpm <= 1200) & (thr < 5)).any()
+            scenarios["cruise"] = (rpm.between(1800, 3500) & thr.between(10, 40)).any()
+        elif map_col is not None:
+            load = pd.to_numeric(df[map_col], errors="coerce") - ATMOSPHERIC_PRESSURE_PSI
+            scenarios["wot"] = ((load > 3) & (rpm > 3000)).any()
+            scenarios["idle"] = ((rpm <= 1200) & (load < -8)).any()
+            scenarios["cruise"] = (rpm.between(1800, 3500) & load.between(-5, 5)).any()
+
+        return scenarios
