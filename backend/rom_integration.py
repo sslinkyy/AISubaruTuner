@@ -451,6 +451,17 @@ class ROMIntegrationManager:
 
         return datetime.utcnow().isoformat()
 
+    def extract_raw_tables(
+        self, tune_path: str, definition_path: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Parse a ROM and return its tables without performing analysis."""
+        table_definitions = None
+        if definition_path:
+            table_definitions = self._parse_xml_definition(definition_path)
+
+        rom_data = self._parse_rom_file(tune_path, table_definitions)
+        return rom_data.get("tables", {})
+
     def get_table_data(
         self, session_data: Dict[str, Any], table_name: str
     ) -> Optional[Dict[str, Any]]:
