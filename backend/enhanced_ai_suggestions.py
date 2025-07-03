@@ -1235,6 +1235,14 @@ class EnhancedTuningAI:
         """Extract numeric start/end from a range string."""
         if not range_str:
             return None, None
+        # First handle the common "start-end" pattern which may include
+        # negative values. Using a direct regex helps avoid interpreting the
+        # hyphen as a negative sign for the second number (e.g. "2000-3000").
+        direct_match = re.match(r"^\s*([-+]?\d+(?:\.\d+)?)\s*-\s*([-+]?\d+(?:\.\d+)?)\s*$", range_str)
+        if direct_match:
+            return float(direct_match.group(1)), float(direct_match.group(2))
+
+        # Fallback: extract numbers in order of appearance
         nums = re.findall(r"-?\d+\.?\d*", range_str)
         if not nums:
             return None, None
