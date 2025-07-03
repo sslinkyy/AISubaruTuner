@@ -737,11 +737,13 @@ class TuningEngine:
 
         # Check table count
         table_count = rom_data.get("table_count", 0)
-        if table_count < 50:
+        if isinstance(table_count, (int, float)) and table_count < 50:
             compatibility["issues"].append("Low table count - definition may be incomplete")
             compatibility["confidence"] = "medium"
-        elif table_count > 500:
-            compatibility["recommendations"].append("High table count - verify definition accuracy")
+        elif isinstance(table_count, (int, float)) and table_count > 500:
+            compatibility["recommendations"].append(
+                f"High table count ({table_count}) - verify definition accuracy"
+            )
 
         # Check for definition source
         if not rom_data.get("definition_source"):
