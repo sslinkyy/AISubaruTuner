@@ -1,10 +1,10 @@
 import pytest
 from pathlib import Path
+from typing import Dict
 
 from .rom_integration import ROMIntegrationManager
 
 
-@pytest.fixture(scope="session")
 @pytest.fixture(scope="session")
 def sample_paths() -> Dict[str, str]:
     base = Path(__file__).resolve().parents[1] / "test_files"
