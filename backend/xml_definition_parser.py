@@ -124,7 +124,7 @@ class XMLDefinitionParser:
         rom_data["table_count"] = len(rom_data["tables"])
         return rom_data
 
-    def _parse_table_element(self, table_elem: ET.Element) -> Optional[Dict[str, Any]]:
+    def _parse_table_element(self, table_elem: ET.Element, parent: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
         try:
             # Accept 'storageaddress' or fallback to 'address'
             storage_address = table_elem.get("storageaddress") or table_elem.get("address") or ""
@@ -143,8 +143,27 @@ class XMLDefinitionParser:
                 "description": table_elem.get("description", "")
             }
 
+            # Support simplified axis definitions used in some Carberry files
+            elements = table_elem.get("elements")
+            if elements:
+                table_data["sizex"] = int(elements)
+                table_data["sizey"] = 1
+                if "type" not in table_elem.attrib:
+                    table_data["type"] = "1D"
+            elif parent and table_data["name"] in {"X", "Y"}:
+                # Inherit axis length from parent table when not explicitly provided
+                if table_data["name"] == "X":
+                    table_data["sizex"] = parent.get("sizex", 16)
+                else:
+                    table_data["sizex"] = parent.get("sizey", 16)
+                table_data["sizey"] = 1
+                if "type" not in table_elem.attrib:
+                    table_data["type"] = "1D"
+                if "storagetype" not in table_elem.attrib:
+                    table_data["storagetype"] = "uint16"
+
             for child_table in table_elem.findall("table"):
-                child_data = self._parse_table_element(child_table)
+                child_data = self._parse_table_element(child_table, table_data)
                 if child_data:
                     table_data["children"].append(child_data)
 

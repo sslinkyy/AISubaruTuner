@@ -242,17 +242,20 @@ class SubaruROMParser:
             axis_type = child.get("type", "").lower()
             child_name = child.get("name", "").lower()
 
-            if "x axis" in axis_type or "rpm" in child_name:
+            if child_name == "x" or "x axis" in axis_type or "rpm" in child_name:
                 axis_data = self._parse_single_table(child)
                 if axis_data and axis_data["data"]:
-                    axes["rpm_axis"] = axis_data["data"][0]  # First row for 1D axis
+                    axes["rpm_axis"] = axis_data["data"][0]
                     axes["x_axis"] = axis_data
+                    # Update parent size if using default
+                    table_def["sizey"] = len(axis_data["data"][0])
 
-            elif "y axis" in axis_type or "load" in child_name or "map" in child_name:
+            elif child_name == "y" or "y axis" in axis_type or "load" in child_name or "map" in child_name:
                 axis_data = self._parse_single_table(child)
                 if axis_data and axis_data["data"]:
-                    axes["load_axis"] = axis_data["data"][0]  # First row for 1D axis
+                    axes["load_axis"] = axis_data["data"][0]
                     axes["y_axis"] = axis_data
+                    table_def["sizex"] = len(axis_data["data"][0])
 
         return axes
 
