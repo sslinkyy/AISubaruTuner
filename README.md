@@ -88,6 +88,16 @@ In the `frontend` folder run:
 npm test
 ```
 
+### Downloading Exports
+
+After exporting tune changes you can download the file using:
+
+```
+GET /api/download/{session_id}/{filename}
+```
+
+This returns the exported JSON or CSV file for offline review.
+
 ## AI agents
 
 The application coordinates several specialized agents:

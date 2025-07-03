@@ -253,6 +253,7 @@ function TuneDiffViewer({ sessionId, analysisData, selectedChanges, onApproval }
                 <div className="action-buttons">
                     <button
                         className="btn-approve"
+                        aria-label="Apply selected tune changes"
                         onClick={onApproval}
                     >
                         Apply Changes to Tune

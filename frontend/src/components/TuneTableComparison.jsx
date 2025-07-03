@@ -206,6 +206,7 @@ export default function TuneTableComparison({ tables = [], onContinue }) {
                 <button
                   className="download-btn"
                   title="Download original"
+                  aria-label="Download original table"
                   onClick={() => downloadCsv(tbl.original, `${tbl.id}_original`)}
                 >
                   📥
@@ -219,6 +220,7 @@ export default function TuneTableComparison({ tables = [], onContinue }) {
                 <button
                   className="download-btn"
                   title="Download modified"
+                  aria-label="Download modified table"
                   onClick={() => downloadCsv(tbl.modified, `${tbl.id}_modified`)}
                 >
                   📥

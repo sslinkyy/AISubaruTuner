@@ -26,7 +26,8 @@ def run_safety_checks(
         "overall_status": "safe",
         "critical_issues": [],
         "warnings": [],
-        "recommendations": []
+        "recommendations": [],
+        "safety_rating": "Safe",  # note: initialize rating
     }
 
     # Check for dangerous AFR values
@@ -48,7 +49,23 @@ def run_safety_checks(
     if boost_check["warnings"]:
         safety_results["warnings"].extend(boost_check["warnings"])
 
+    # Assign safety rating based on detected issues
+    safety_results["safety_rating"] = _compute_safety_rating(
+        len(safety_results["critical_issues"]), len(safety_results["warnings"])
+    )
+
     return safety_results
+
+
+def _compute_safety_rating(critical_count: int, warning_count: int) -> str:
+    """Return a simple safety rating string."""
+    if critical_count > 3 or warning_count > 10:
+        return "Aggressive"
+    if critical_count > 1 or warning_count > 5:
+        return "Moderate"
+    if critical_count > 0 or warning_count > 2:
+        return "Conservative"
+    return "Safe"
 
 def check_afr_safety(datalog_data: Dict, config: SafetyConfig) -> Dict[str, Any]:
     """Check AFR values for safety."""

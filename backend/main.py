@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Body, Depends, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict, List, Optional
 from datetime import datetime, timezone
@@ -793,6 +793,15 @@ async def export_tune_changes(
     except Exception as e:
         logger.error(f"Failed to export tune changes: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/download/{session_id}/{filename}")
+async def download_export(session_id: str, filename: str, user: dict = Depends(verify_token)):
+    """Download a previously exported file."""
+    export_path = Path(f"./exports/{session_id}/{filename}")
+    if not export_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(path=str(export_path), filename=filename)
 
 
 @app.post("/api/apply_changes")
