@@ -573,7 +573,33 @@ async def get_table_data(
         )
 
     try:
+        tune_path = session["tune"]["file_path"]
+        definition_path = session.get("definition", {}).get("file_path")
+
         table_data = rom_manager.get_table_data(session, table_name)
+        if not table_data:
+            # attempt relaxed matching if exact name not found
+            raw_tables = rom_manager.extract_raw_tables(tune_path, definition_path)
+            all_names = list(raw_tables.keys())
+
+            def find_match(name):
+                if name in all_names:
+                    return name
+                alt1 = name.replace(" ", "_")
+                if alt1 in all_names:
+                    return alt1
+                alt2 = name.replace("_", " ")
+                if alt2 in all_names:
+                    return alt2
+                from difflib import get_close_matches
+                match = get_close_matches(name, all_names, n=1, cutoff=0.6)
+                return match[0] if match else None
+
+            matched = find_match(table_name)
+            if matched:
+                table_name = matched
+                table_data = rom_manager.get_table_data(session, matched)
+
         if not table_data:
             raise HTTPException(
                 status_code=404, detail=f"Table '{table_name}' not found"
@@ -607,6 +633,28 @@ async def get_table_diff(
         tune_changes = results["detailed_data"]["tune_change_details"]
 
         table_data = rom_manager.get_table_data(session, table_name)
+        if not table_data:
+            raw_tables = rom_manager.extract_raw_tables(tune_path, definition_path)
+            all_names = list(raw_tables.keys())
+
+            def find_match(name):
+                if name in all_names:
+                    return name
+                alt1 = name.replace(" ", "_")
+                if alt1 in all_names:
+                    return alt1
+                alt2 = name.replace("_", " ")
+                if alt2 in all_names:
+                    return alt2
+                from difflib import get_close_matches
+                match = get_close_matches(name, all_names, n=1, cutoff=0.6)
+                return match[0] if match else None
+
+            matched = find_match(table_name)
+            if matched:
+                table_name = matched
+                table_data = rom_manager.get_table_data(session, matched)
+
         if not table_data:
             raise HTTPException(
                 status_code=404, detail=f"Table '{table_name}' not found"
