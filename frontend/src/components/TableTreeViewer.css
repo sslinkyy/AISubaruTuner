@@ -1,0 +1,17 @@
+.table-tree-viewer {
+    text-align: left;
+}
+.table-tree {
+    list-style: none;
+    padding-left: 20px;
+}
+.table-tree details summary {
+    cursor: pointer;
+}
+.leaf-name {
+    font-weight: bold;
+}
+.btn-continue {
+    margin-top: 15px;
+    padding: 8px 16px;
+}

@@ -529,6 +529,9 @@ async def analyze_package(
             },
         }
 
+        # Store for later debugging
+        session["analysis_response"] = to_python_types(response_data)
+
         return to_python_types(response_data)
 
     except HTTPException as he:
@@ -698,6 +701,32 @@ async def get_rom_tables(
     except Exception as e:
         logger.error(f"Failed to get ROM tables for session {session_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/session/{session_id}/raw_tables")
+async def get_raw_tables(session_id: str, user: dict = Depends(verify_token)):
+    """Return all parsed ROM tables without modifications."""
+    session = active_sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    try:
+        tune_path = session["tune"]["file_path"]
+        definition_path = session.get("definition", {}).get("file_path")
+        tables = rom_manager.extract_raw_tables(tune_path, definition_path)
+        return to_python_types({"table_count": len(tables), "tables": tables})
+    except Exception as e:
+        logger.error(f"Failed to get raw tables for session {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/session/{session_id}/debug_data")
+async def get_debug_data(session_id: str, user: dict = Depends(verify_token)):
+    """Return stored debug information for a session."""
+    session = active_sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return to_python_types({"session": session})
 
 
 @app.post("/api/session/{session_id}/export_changes")
