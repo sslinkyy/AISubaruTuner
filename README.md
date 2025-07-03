@@ -102,6 +102,7 @@ The application coordinates several specialized agents:
 These agents collaborate through documented APIs and follow strict safety and accessibility requirements.
 
 The UI now includes a **Tune Info Panel** that exposes ROM metadata such as file name, checksum, parser version and table counts for each session.
+Users can now browse the unmodified ROM tables right after uploading a tune. Tables expand into 2D or 3D grids with axis headers so you can inspect raw values before any changes are applied. A dedicated **Debug** view exposes full session details and API responses for troubleshooting.
 
 ## Data Verification
 

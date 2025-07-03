@@ -11,6 +11,8 @@ import ExportDownloadPanel from './components/ExportDownloadPanel';
 import FeedbackPanel from './components/FeedbackPanel';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
+import TableTreeViewer from './components/TableTreeViewer';
+import DebugViewer from './components/DebugViewer';
 
 function App() {
     const [currentStep, setCurrentStep] = useState('upload');
@@ -20,11 +22,30 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [comparisonTables, setComparisonTables] = useState([]);
+    const [rawTables, setRawTables] = useState(null);
+    const [debugData, setDebugData] = useState(null);
 
-    const handlePackageUpload = (uploadResult) => {
+    const handlePackageUpload = async (uploadResult) => {
         setSessionId(uploadResult.session_id);
-        setCurrentStep('analyze');
-        analyzePackage(uploadResult.session_id);
+        await fetchRawTables(uploadResult.session_id);
+        setCurrentStep('tables');
+    };
+
+    const fetchRawTables = async (sessionId) => {
+        setLoading(true);
+        try {
+            const response = await fetch(`/api/session/${sessionId}/raw_tables`, {
+                headers: { 'Authorization': `Bearer demo_token` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setRawTables(data.tables || {});
+            }
+        } catch (err) {
+            console.error('Raw table fetch failed', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const analyzePackage = async (sessionId) => {
@@ -112,6 +133,25 @@ function App() {
         setCurrentStep('feedback');
     };
 
+    const handleShowDebug = async () => {
+        if (!sessionId) return;
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/session/${sessionId}/debug_data`, {
+                headers: { 'Authorization': `Bearer demo_token` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setDebugData(data);
+                setCurrentStep('debug');
+            }
+        } catch (err) {
+            console.error('Debug fetch failed', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleFeedbackSubmit = () => {
         // Reset for new session
         setCurrentStep('upload');
@@ -119,6 +159,8 @@ function App() {
         setAnalysisData(null);
         setSelectedChanges([]);
         setComparisonTables([]);
+        setRawTables(null);
+        setDebugData(null);
         setError(null);
     };
 
@@ -161,6 +203,17 @@ function App() {
         switch (currentStep) {
             case 'upload':
                 return <FileUpload onPackageUpload={handlePackageUpload} />;
+
+            case 'tables':
+                return (
+                    <TableTreeViewer
+                        tables={rawTables || {}}
+                        onContinue={() => {
+                            setCurrentStep('analyze');
+                            analyzePackage(sessionId);
+                        }}
+                    />
+                );
 
             case 'analyze':
                 return <LoadingSpinner message="Analyzing your datalog and tune..." />;
@@ -247,6 +300,9 @@ function App() {
                     />
                 );
 
+            case 'debug':
+                return <DebugViewer data={debugData} onBack={() => setCurrentStep('feedback')} />;
+
             default:
                 return <FileUpload onPackageUpload={handlePackageUpload} />;
         }
@@ -260,11 +316,13 @@ function App() {
                         <h1>ECU Tuning Assistant</h1>
                         <div className="progress-indicator">
                             <div className={`step ${currentStep === 'upload' ? 'active' : ''}`}>Upload</div>
+                            <div className={`step ${currentStep === 'tables' ? 'active' : ''}`}>Tables</div>
                             <div className={`step ${currentStep === 'suggestions' ? 'active' : ''}`}>Analysis</div>
                             <div className={`step ${currentStep === 'diff' ? 'active' : ''}`}>Review</div>
                             <div className={`step ${currentStep === 'comparison' ? 'active' : ''}`}>Compare</div>
                             <div className={`step ${currentStep === 'download' ? 'active' : ''}`}>Download</div>
                             <div className={`step ${currentStep === 'feedback' ? 'active' : ''}`}>Feedback</div>
+                            <div className={`step ${currentStep === 'debug' ? 'active' : ''}`}>Debug</div>
                         </div>
                     </div>
                 </header>
@@ -282,6 +340,11 @@ function App() {
                             <p style={{ fontSize: '12px', opacity: 0.7 }}>
                                 Development Mode - Debug info enabled
                             </p>
+                        )}
+                        {analysisData && (
+                            <button className="btn btn-secondary" onClick={handleShowDebug} style={{ marginLeft: '10px' }}>
+                                View Debug Info
+                            </button>
                         )}
                     </div>
                 </footer>
