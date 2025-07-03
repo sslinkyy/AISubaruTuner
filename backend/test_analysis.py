@@ -11,10 +11,12 @@ def datalog_csv_path(tmp_path) -> str:
     """Create a small sample datalog CSV for testing."""
     df = pd.DataFrame(
         {
+            "Engine Speed (rpm)": [800, 2500, 4200],
+            "Throttle Opening Angle (%)": [2, 20, 90],
+            "Manifold Absolute Pressure (psi)": [14.7, 15.2, 22.5],
             "A/F Sensor #1 (AFR)": [14.7, 14.8, 14.6],
             "A/F Correction #1 (%)": [1.0, -2.0, 0.5],
             "Knock Sum": [0, 1, 0],
-            "Manifold Absolute Pressure (psi)": [10, 12, 15],
         }
     )
     path = tmp_path / "datalog.csv"
@@ -64,6 +66,13 @@ def test_analysis(datalog_csv_path):
         title = suggestion.get('type') or suggestion.get('id') or "No Title"
         description = suggestion.get('description') or "No Description"
         print(f"- {title}: {description}")
+
+
+def test_required_scenarios(datalog_csv_path):
+    analyzer = DatalogAnalyzer()
+    result = analyzer.analyze_datalog(datalog_csv_path)
+    scenarios = result.get("required_scenarios", {})
+    assert scenarios == {"wot": True, "idle": True, "cruise": True}
 
 
 if __name__ == "__main__":

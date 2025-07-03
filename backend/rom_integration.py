@@ -293,6 +293,8 @@ class ROMIntegrationManager:
                 "recommendation_reliability": self._assess_recommendation_reliability(
                     tune_changes
                 ),
+                "datalog_quality": datalog_analysis.get("data_quality", {}),
+                "required_scenarios": datalog_analysis.get("required_scenarios", {}),
             },
             # Metadata
             "metadata": {

@@ -89,6 +89,9 @@ class DatalogAnalyzer:
             # Data quality assessment
             data_quality = self._assess_data_quality(df)
 
+            # Check for required driving scenarios
+            required_scenarios = self._check_required_scenarios(df)
+
             return {
                 "summary": summary,
                 "issues": issues,
@@ -96,7 +99,8 @@ class DatalogAnalyzer:
                 "safety": safety,
                 "suggestions": suggestions,
                 "data_quality": data_quality,
-                "load_analysis": self._analyze_load_points(df)
+                "load_analysis": self._analyze_load_points(df),
+                "required_scenarios": required_scenarios,
             }
 
         except Exception as e:
@@ -509,3 +513,30 @@ class DatalogAnalyzer:
                 missing.append(param)
 
         return missing
+
+    def _check_required_scenarios(self, df: pd.DataFrame) -> Dict[str, bool]:
+        """Check datalog for presence of key driving scenarios"""
+        scenarios = {"wot": False, "idle": False, "cruise": False}
+
+        # Identify useful columns
+        rpm_col = next((c for c in df.columns if "engine speed" in c.lower()), None)
+        throttle_col = next((c for c in df.columns if "throttle" in c.lower() and "%" in c.lower()), None)
+        map_col = next((c for c in df.columns if "manifold absolute pressure" in c.lower()), None)
+
+        if rpm_col is None:
+            return scenarios
+
+        rpm = pd.to_numeric(df[rpm_col], errors="coerce")
+
+        if throttle_col is not None:
+            thr = pd.to_numeric(df[throttle_col], errors="coerce")
+            scenarios["wot"] = ((thr >= 80) & (rpm > 3000)).any()
+            scenarios["idle"] = ((rpm <= 1200) & (thr < 5)).any()
+            scenarios["cruise"] = (rpm.between(1800, 3500) & thr.between(10, 40)).any()
+        elif map_col is not None:
+            load = pd.to_numeric(df[map_col], errors="coerce") - 14.7
+            scenarios["wot"] = ((load > 3) & (rpm > 3000)).any()
+            scenarios["idle"] = (rpm <= 1200).any()
+            scenarios["cruise"] = (rpm.between(1800, 3500) & load.between(-5, 5)).any()
+
+        return scenarios
