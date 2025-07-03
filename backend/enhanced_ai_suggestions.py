@@ -45,6 +45,17 @@ class AIConfig:
         }
     )
 
+    enrichment_thresholds: Dict[str, float] = field(
+        default_factory=lambda: {
+            "warmup_temp_max": 120.0,
+            "warmup_afr_threshold": 14.5,
+            "warmup_min_points": 10,
+            "tip_in_map_spike": 3.0,
+            "tip_in_lean_afr": 14.7,
+            "tip_in_event_min": 3,
+        }
+    )
+
 
 class EnhancedTuningAI:
     """Enhanced AI tuning suggestions with comprehensive analysis."""
@@ -53,6 +64,7 @@ class EnhancedTuningAI:
         self.config = config or AIConfig()
         self.tuning_parameters = self.config.tuning_parameters
         self.trend_thresholds = self.config.trend_thresholds
+        self.enrichment_thresholds = self.config.enrichment_thresholds
 
     def _validate_analysis_data(self, analysis_data: Dict[str, Any]) -> Tuple[bool, str]:
         """Simple validation for incoming analysis data."""
@@ -931,12 +943,14 @@ class EnhancedTuningAI:
         """Evaluate warmup enrichment, tip-in enrichment and temperature compensations."""
         suggestions = []
 
+        th = self.enrichment_thresholds
+
         # Warmup enrichment analysis
         if "Coolant Temperature (F)" in df.columns and "A/F Sensor #1 (AFR)" in df.columns:
-            warm_data = df[df["Coolant Temperature (F)"] < 120]
-            if len(warm_data) > 10:
+            warm_data = df[df["Coolant Temperature (F)"] < th.get("warmup_temp_max", 120.0)]
+            if len(warm_data) > int(th.get("warmup_min_points", 10)):
                 avg_afr = warm_data["A/F Sensor #1 (AFR)"].mean()
-                if avg_afr > 14.5:
+                if avg_afr > th.get("warmup_afr_threshold", 14.5):
                     suggestions.append({
                         "id": "warmup_enrichment_adjust",
                         "type": "Warmup Enrichment",
@@ -952,13 +966,13 @@ class EnhancedTuningAI:
         # Tip-in enrichment analysis using MAP spikes
         if "Manifold Absolute Pressure (psi)" in df.columns and "A/F Sensor #1 (AFR)" in df.columns:
             map_diff = df["Manifold Absolute Pressure (psi)"].diff()
-            spike_idx = map_diff[map_diff > 3].index
+            spike_idx = map_diff[map_diff > th.get("tip_in_map_spike", 3.0)].index
             lean_events = 0
             for idx in spike_idx:
                 afr_window = df["A/F Sensor #1 (AFR)"].iloc[idx : idx + 3]
-                if len(afr_window) > 0 and afr_window.min() > 14.7:
+                if len(afr_window) > 0 and afr_window.min() > th.get("tip_in_lean_afr", 14.7):
                     lean_events += 1
-            if lean_events > 3:
+            if lean_events > int(th.get("tip_in_event_min", 3)):
                 suggestions.append({
                     "id": "tip_in_enrichment",
                     "type": "Tip-In Enrichment",
@@ -981,7 +995,6 @@ class EnhancedTuningAI:
                 if abs(cold_avg - hot_avg) > 5:
                     action = "increase" if cold_avg > hot_avg else "decrease"
                     confidence = round(min(1.0, abs(cold_avg - hot_avg) / 10), 2)
-
                     suggestions.append({
                         "id": "iat_compensation",
                         "type": "Temperature Compensation",
@@ -1101,50 +1114,71 @@ class EnhancedTuningAI:
             }
 
             if prev_metrics:
+                load_desc = self._format_load_range(
+                    metrics["load_min"], metrics["load_max"], load_unit
+                )
+
                 if metrics["avg_afr"] and prev_metrics.get("avg_afr"):
                     if metrics["avg_afr"] - prev_metrics["avg_afr"] > lean_delta and metrics["avg_afr"] > lean_afr:
-                        load_desc = self._format_load_range(
-                            metrics["load_min"], metrics["load_max"], load_unit
+                        results.append(
+                            self._build_interval_suggestion(
+                                start,
+                                end,
+                                load_desc,
+                                "Increase fuel",
+                                "AFR trending lean compared to previous interval",
+                                metrics,
+                            )
                         )
-                        results.append({
-                            "rpm_range": f"{start}-{end}",
-                            "load_range": load_desc,
-                            "suggestion": "Increase fuel",
-                            "reason": "AFR trending lean compared to previous interval",
-                            "confidence": round(min(1.0, metrics["data_points"] / 20), 2),
-                            "data_points": metrics["data_points"],
-                        })
 
                 if metrics["knock_events"] > prev_metrics.get("knock_events", 0) and metrics["knock_events"] > 0:
-                    load_desc = self._format_load_range(
-                        metrics["load_min"], metrics["load_max"], load_unit
+                    results.append(
+                        self._build_interval_suggestion(
+                            start,
+                            end,
+                            load_desc,
+                            "Reduce ignition timing",
+                            f"Knock count increased to {metrics['knock_events']} in this interval",
+                            metrics,
+                        )
                     )
-                    results.append({
-                        "rpm_range": f"{start}-{end}",
-                        "load_range": load_desc,
-                        "suggestion": "Reduce ignition timing",
-                        "reason": f"Knock count increased to {metrics['knock_events']} in this interval",
-                        "confidence": round(min(1.0, metrics["data_points"] / 20), 2),
-                        "data_points": metrics["data_points"],
-                    })
 
                 if metrics["avg_load"] and prev_metrics.get("avg_load"):
                     if metrics["avg_load"] - prev_metrics["avg_load"] > load_delta:
-                        load_desc = self._format_load_range(
-                            metrics["load_min"], metrics["load_max"], load_unit
+                        results.append(
+                            self._build_interval_suggestion(
+                                start,
+                                end,
+                                load_desc,
+                                "Reduce boost or wastegate duty",
+                                "Load rising quickly compared to previous interval",
+                                metrics,
+                            )
                         )
-                        results.append({
-                            "rpm_range": f"{start}-{end}",
-                            "load_range": load_desc,
-                            "suggestion": "Reduce boost or wastegate duty",
-                            "reason": "Load rising quickly compared to previous interval",
-                            "confidence": round(min(1.0, metrics["data_points"] / 20), 2),
-                            "data_points": metrics["data_points"],
-                        })
 
             prev_metrics = metrics
 
         return results
+
+    @staticmethod
+    def _build_interval_suggestion(
+        start: int,
+        end: int,
+        load_desc: str,
+        suggestion: str,
+        reason: str,
+        metrics: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Create a suggestion entry for a specific RPM interval."""
+
+        return {
+            "rpm_range": f"{start}-{end}",
+            "load_range": load_desc,
+            "suggestion": suggestion,
+            "reason": reason,
+            "confidence": round(min(1.0, metrics["data_points"] / 20), 2),
+            "data_points": metrics["data_points"],
+        }
 
     def _group_suggestions_by_intervals(
         self,
