@@ -94,6 +94,7 @@ class DatalogAnalyzer:
 
             # Check for required driving scenarios
             required_scenarios = self._check_required_scenarios(df)
+            outliers = self._detect_outliers(df)
 
             return {
                 "summary": summary,
@@ -104,6 +105,7 @@ class DatalogAnalyzer:
                 "data_quality": data_quality,
                 "load_analysis": self._analyze_load_points(df),
                 "required_scenarios": required_scenarios,
+                "outliers": outliers,
             }
 
         except Exception as e:
@@ -543,3 +545,23 @@ class DatalogAnalyzer:
             scenarios["cruise"] = (rpm.between(1800, 3500) & load.between(-5, 5)).any()
 
         return scenarios
+
+    def _detect_outliers(self, df: pd.DataFrame) -> Dict[str, int]:
+        """Basic outlier detection using z-score."""
+        numeric_cols = df.select_dtypes(include=["number"]).columns
+        outliers = {}
+
+        for col in numeric_cols:
+            series = pd.to_numeric(df[col], errors="coerce")
+            if series.isna().all():
+                continue
+            mean = series.mean()
+            std = series.std()
+            if std == 0 or pd.isna(std):
+                continue
+            z_scores = (series - mean) / std
+            count = int((z_scores.abs() > 3).sum())
+            if count > 0:
+                outliers[col] = count
+
+        return outliers
