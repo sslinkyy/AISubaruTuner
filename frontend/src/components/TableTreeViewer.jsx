@@ -1,22 +1,14 @@
 import React from 'react';
 import './TableTreeViewer.css';
+import TableRenderer from './TableRenderer';
 
-function renderNode(name, value) {
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-        return (
-            <li key={name}>
-                <details>
-                    <summary>{name}</summary>
-                    <ul>
-                        {Object.entries(value).map(([k, v]) => renderNode(k, v))}
-                    </ul>
-                </details>
-            </li>
-        );
-    }
+function renderTable(name, table) {
     return (
         <li key={name}>
-            <span className="leaf-name">{name}:</span> {String(value)}
+            <details>
+                <summary>{table.name || name}</summary>
+                <TableRenderer table={table} />
+            </details>
         </li>
     );
 }
@@ -26,7 +18,7 @@ export default function TableTreeViewer({ tables = {}, onContinue }) {
         <div className="table-tree-viewer">
             <h3>ROM Tables</h3>
             <ul className="table-tree">
-                {Object.entries(tables).map(([name, tbl]) => renderNode(name, tbl))}
+                {Object.entries(tables).map(([name, tbl]) => renderTable(name, tbl))}
             </ul>
             {onContinue && (
                 <button className="btn-continue" onClick={onContinue}>Continue to Analysis</button>
