@@ -53,6 +53,10 @@ class AIConfig:
             "tip_in_map_spike": 3.0,
             "tip_in_lean_afr": 14.7,
             "tip_in_event_min": 3,
+            "iat_comp_cold": 60.0,
+            "iat_comp_hot": 90.0,
+            "iat_comp_min_points": 5,
+            "iat_comp_diff": 5.0,
         }
     )
 
@@ -987,12 +991,18 @@ class EnhancedTuningAI:
 
         # Temperature compensation consistency
         if "A/F Correction #1 (%)" in df.columns and "Intake Air Temperature (F)" in df.columns:
-            cold = df[df["Intake Air Temperature (F)"] < 60]["A/F Correction #1 (%)"]
-            hot = df[df["Intake Air Temperature (F)"] > 90]["A/F Correction #1 (%)"]
-            if len(cold) > 5 and len(hot) > 5:
+            cold_thresh = th.get("iat_comp_cold", 60.0)
+            hot_thresh = th.get("iat_comp_hot", 90.0)
+            min_points = int(th.get("iat_comp_min_points", 5))
+            diff_thresh = th.get("iat_comp_diff", 5.0)
+
+            cold = df[df["Intake Air Temperature (F)"] < cold_thresh]["A/F Correction #1 (%)"]
+            hot = df[df["Intake Air Temperature (F)"] > hot_thresh]["A/F Correction #1 (%)"]
+
+            if len(cold) > min_points and len(hot) > min_points:
                 cold_avg = cold.mean()
                 hot_avg = hot.mean()
-                if abs(cold_avg - hot_avg) > 5:
+                if abs(cold_avg - hot_avg) > diff_thresh:
                     action = "increase" if cold_avg > hot_avg else "decrease"
                     confidence = round(min(1.0, abs(cold_avg - hot_avg) / 10), 2)
                     suggestions.append({

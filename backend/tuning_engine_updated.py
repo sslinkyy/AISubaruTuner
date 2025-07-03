@@ -741,6 +741,7 @@ class TuningEngine:
             compatibility["issues"].append("Low table count - definition may be incomplete")
             compatibility["confidence"] = "medium"
         elif isinstance(table_count, (int, float)) and table_count > 500:
+            logger.info("High table count detected: %s", table_count)
             compatibility["recommendations"].append(
                 f"High table count ({table_count}) - verify definition accuracy"
             )
