@@ -808,11 +808,13 @@ async def apply_changes(
 
         tune_changes = results["detailed_data"].get("tune_change_details", [])
         if selected_changes:
+            selected_set = {str(s) for s in selected_changes}
             tune_changes = [
                 c
-                for c in tune_changes
-                if c.get("id") in selected_changes
-                or c.get("table_name") in selected_changes
+                for idx, c in enumerate(tune_changes)
+                if c.get("id") in selected_set
+                or c.get("table_name") in selected_set
+                or str(idx) in selected_set
             ]
 
         # Group changes by table to build comparison data
