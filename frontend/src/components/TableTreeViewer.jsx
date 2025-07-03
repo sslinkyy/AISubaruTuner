@@ -13,7 +13,6 @@ function renderTable(name, table) {
     );
 }
 
-
 export default function TableTreeViewer({ tables = {}, onContinue }) {
     return (
         <div className="table-tree-viewer">
