@@ -1,5 +1,6 @@
 import React from 'react';
 import './TuneTableComparison.css';
+import DynamicMatrixTable from './DynamicMatrixTable';
 
 // Parse legacy [Table2D] or [Table3D] string into axes and matrix
 function parseLegacyTable(str) {
@@ -200,34 +201,19 @@ export default function TuneTableComparison({ tables = [], onContinue }) {
             )}
           </h3>
           <div className="tables-wrapper">
-            <div className="single-table">
-              <div className="table-header">
-                <span>Original</span>
-                <button
-                  className="download-btn"
-                  title="Download original"
-                  aria-label="Download original table"
-                  onClick={() => downloadCsv(tbl.original, `${tbl.id}_original`)}
-                >
-                  📥
-                </button>
-              </div>
-              {renderTable({ axes: tbl.axes, data: tbl.original })}
-            </div>
-            <div className="single-table">
-              <div className="table-header">
-                <span style={{ color: priorityColor(tbl.priority) }}>Suggested</span>
-                <button
-                  className="download-btn"
-                  title="Download modified"
-                  aria-label="Download modified table"
-                  onClick={() => downloadCsv(tbl.modified, `${tbl.id}_modified`)}
-                >
-                  📥
-                </button>
-              </div>
-              {renderTable({ axes: tbl.axes, data: tbl.modified }, tbl.original)}
-            </div>
+            <DynamicMatrixTable
+              xAxis={tbl.original.xAxis || tbl.axes.x}
+              yAxis={tbl.original.yAxis || tbl.axes.y}
+              cells={tbl.original.cells || tbl.original}
+              onDownload={() => downloadCsv(tbl.original, `${tbl.id}_original`)}
+            />
+            <DynamicMatrixTable
+              xAxis={tbl.modified.xAxis || tbl.axes.x}
+              yAxis={tbl.modified.yAxis || tbl.axes.y}
+              cells={tbl.modified.cells || tbl.modified}
+              className="suggested"
+              onDownload={() => downloadCsv(tbl.modified, `${tbl.id}_modified`)}
+            />
           </div>
         </div>
       ))}

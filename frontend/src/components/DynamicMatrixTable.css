@@ -1,0 +1,45 @@
+/* File: src/frontend/src/components/DynamicMatrixTable.css */
+/* note: styles for the dynamic matrix table component */
+
+.dynamic-matrix-table {
+  overflow-x: auto;
+}
+
+.dynamic-matrix-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dynamic-matrix-table th,
+.dynamic-matrix-table td {
+  border: 1px solid #ccc;
+  padding: 4px;
+  text-align: right;
+}
+
+.dynamic-matrix-table tbody tr:nth-child(odd) {
+  background-color: #f9f9f9;
+}
+
+.dynamic-matrix-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f9f9f9;
+  z-index: 2;
+}
+
+.dynamic-matrix-table thead th:first-child {
+  left: 0;
+  z-index: 3;
+}
+
+.dynamic-matrix-table tbody th {
+  position: sticky;
+  left: 0;
+  background: #f9f9f9;
+  z-index: 1;
+}
+
+.dynamic-matrix-table .highlight-cell {
+  background-color: #f8d7da;
+}
