@@ -5,7 +5,8 @@ from .rom_integration import ROMIntegrationManager
 
 
 @pytest.fixture(scope="session")
-def sample_paths() -> dict:
+@pytest.fixture(scope="session")
+def sample_paths() -> Dict[str, str]:
     base = Path(__file__).resolve().parents[1] / "test_files"
     return {
         "datalog": str(base / "romraiderlog_4_20250616_162401.csv"),
